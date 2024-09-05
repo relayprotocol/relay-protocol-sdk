@@ -1,12 +1,7 @@
-import { NextFunction, Request, RequestHandler, Response } from "express";
-import { ZodSchema, z } from "zod";
+import { NextFunction, Request, Response } from "express";
+import { ZodSchema } from "zod";
 
-export type Endpoint = {
-  method: "get" | "post";
-  path: string;
-  handlers: RequestHandler<any, any, any, any, any>[];
-};
-
+// Generic API request validation method
 export const validateSchema =
   (schema: ZodSchema) =>
   async (req: Request, res: Response, next: NextFunction) => {

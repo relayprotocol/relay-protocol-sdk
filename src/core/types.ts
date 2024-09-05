@@ -1,10 +1,37 @@
+import { Chain } from "./chains";
+
+export type UserPayment = {
+  to: string;
+  currency: string;
+  amount: string;
+};
+
+export type SolverPayment = {
+  to: string;
+  currency: string;
+  minAmount: string;
+};
+
+export type EvmCall = {
+  to: string;
+  data: string;
+  value: string;
+};
+
+export type Call = EvmCall;
+
 export type Commitment = {
   origins: {
-    paymentTo: string;
-    paymentCurrency: string;
-    paymentAmount: string;
+    chain: Chain;
+    payment: UserPayment;
+    refundOptions: SolverPayment[];
+    transactionId?: string;
   }[];
   destination: {
-    // Calls or intents?
+    chain: Chain;
+    executions: {
+      payment: SolverPayment;
+      call?: Call;
+    }[];
   };
 };
