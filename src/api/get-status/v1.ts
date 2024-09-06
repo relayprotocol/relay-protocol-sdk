@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { Endpoint } from "../types";
 import { validateSchema } from "../zod";
-import { Commitment } from "../../core/types";
+import { Commitment } from "../../core/commitment";
 
 const userPaymentSchema = z.object({
   to: z.string(),

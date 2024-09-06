@@ -1,5 +1,5 @@
 import { chains } from "../chains";
-import { Commitment } from "../types";
+import { Commitment } from "../commitment";
 
 export const validate = async (commitment: Commitment) => {
   // Validate the origins
