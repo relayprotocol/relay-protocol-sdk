@@ -23,3 +23,4 @@ tsconfig.tsbuildinfo
 # Misc
 **/.DS_Store
 .eslintcache
+cache
