@@ -3,43 +3,46 @@ import crypto from "crypto";
 
 import { Chain, ChainVmType } from "./chains";
 
-export type UserPayment = {
+export type InputPayment = {
   to: string;
   currency: string;
   amount: string;
 };
 
-export type SolverPayment = {
+export type OutputPayment = {
   to: string;
   currency: string;
   minAmount: string;
 };
 
+export type EvmCall = {
+  from: string;
+  to: string;
+  data: string;
+  value: string;
+};
+
 export type Call = {
   vmType: Extract<ChainVmType, "evm">;
-  data: {
-    to: string;
-    data: string;
-    value: string;
-  };
+  data: EvmCall;
 };
 
 export type Commitment = {
-  origins: {
+  solver: string;
+  inputs: {
     chain: Chain;
-    payment: UserPayment;
-    refundOptions: SolverPayment[];
+    payment: InputPayment;
+    refund: OutputPayment[];
   }[];
-  destination: {
+  output: {
     chain: Chain;
-    executions: {
-      payment: SolverPayment;
-      call?: Call;
-    }[];
+    payment: OutputPayment & { expectedAmount: string; lateAmount: string };
+    calls?: Call[];
   };
   salt: string;
 };
 
+// TODO: Switch to using Borsh instead
 export const getCommitmentId = (commitment: Commitment) => {
   const stringifiedCommitment = stringify(commitment);
   return (

@@ -1,3 +1,3 @@
-import getStatusV1 from "./get-status/v1";
+import validateCommitmentDataV1 from "./validate/commitment-data/v1";
 
-export const endpoints = [getStatusV1];
+export const endpoints = [validateCommitmentDataV1];
