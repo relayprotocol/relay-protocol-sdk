@@ -33,7 +33,7 @@ export const commitmentSchema = z.object({
   output: z.object({
     chain: z.string(),
     payment: outputPaymentSchema,
-    calls: z.array(callSchema.evm),
+    calls: z.array(callSchema.evm).optional(),
   }),
   salt: z.string(),
 });

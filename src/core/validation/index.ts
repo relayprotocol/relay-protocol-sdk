@@ -1,4 +1,5 @@
 import { getBytes, verifyMessage } from "ethers";
+
 import { chains } from "../chains";
 import { Commitment, getCommitmentId } from "../commitment";
 
@@ -23,7 +24,7 @@ export const validateCommitmentData = async (
   signature: string
 ): Promise<ValidateCommitmentDataResult> => {
   // Validate the number of inputs
-  if (commitment.inputs.length >= 1) {
+  if (commitment.inputs.length !== 1) {
     return {
       status: "failure",
       reason: "Invalid number of inputs",

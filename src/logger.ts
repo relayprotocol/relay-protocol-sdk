@@ -3,6 +3,10 @@ import { createLogger, format, transports } from "winston";
 const log = (level: "error" | "info" | "warn" | "debug") => {
   const service = process.env.SERVICE;
 
+  if (process.env.LOG_LEVEL === "none") {
+    return () => {};
+  }
+
   const logger = createLogger({
     exitOnError: false,
     level: "debug",
