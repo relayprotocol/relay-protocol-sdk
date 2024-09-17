@@ -1,21 +1,21 @@
 import { getBytes, verifyMessage } from "ethers";
 
-import { chains } from "../chains";
+import { chains, ChainVmType } from "../chains";
 import { Commitment, getCommitmentId } from "../commitment";
 
-export type ParseInputResult =
-  | { status: "success"; amountPaid: string }
-  | { status: "failure"; reason: string };
+import { EvmCommitmentValidator } from "./vm/evm";
 
-export type ParseOutputResult =
-  | { status: "success"; amountPaid: string; callsExecuted: boolean }
-  | { status: "failure"; reason: string };
+const getCommitmentValidator = (chainVmType: ChainVmType) => {
+  switch (chainVmType) {
+    case ChainVmType.Evm:
+      return new EvmCommitmentValidator();
+
+    case ChainVmType.Svm:
+      throw new Error("SVM commitment validator not implemented");
+  }
+};
 
 export type ValidateCommitmentDataResult =
-  | { status: "success" }
-  | { status: "failure"; reason: string };
-
-export type ValidateCommitmentExecutionResult =
   | { status: "success" }
   | { status: "failure"; reason: string };
 
@@ -75,86 +75,83 @@ export const validateCommitmentData = async (
   return { status: "success" };
 };
 
-export abstract class CommitmentValidator {
-  public abstract parseInput(data: {
-    commitment: Commitment;
+export type ValidateCommitmentExecutionResult =
+  | { status: "success" }
+  | { status: "failure"; reason: string };
+
+export const validateCommitmentExecution = async (
+  commitment: Commitment,
+  signature: string,
+  inputExecutions: {
     inputIndex: number;
     transactionId: string;
-  }): Promise<ParseInputResult>;
-
-  public abstract parseOutput(data: {
-    commitment: Commitment;
+  }[],
+  outputExecution: {
     transactionId: string;
-  }): Promise<ParseOutputResult>;
-
-  public async validateCommitmentExecution({
-    commitment,
-    signature,
-    inputs,
-    output,
-  }: {
-    commitment: Commitment;
-    signature: string;
-    inputs: {
-      inputIndex: number;
-      transactionId: string;
-    }[];
-    output: {
-      transactionId: string;
-    };
-  }): Promise<ValidateCommitmentExecutionResult> {
-    // First, validate the commitment data
-    const validateCommitmentDataResult = await validateCommitmentData(
-      commitment,
-      signature
-    );
-    if (validateCommitmentDataResult.status !== "success") {
-      return validateCommitmentDataResult;
-    }
-
-    // Validate the inputs
-    for (const { inputIndex, transactionId } of inputs) {
-      const parseInputResult = await this.parseInput({
-        commitment,
-        inputIndex,
-        transactionId,
-      });
-      if (parseInputResult.status !== "success") {
-        return parseInputResult;
-      }
-
-      if (
-        BigInt(parseInputResult.amountPaid) <
-        BigInt(commitment.inputs[inputIndex].payment.amount)
-      ) {
-        return {
-          status: "failure",
-          reason: "Insufficient input payment",
-        };
-      }
-    }
-
-    // Validate the output
-    {
-      const parseOutputResult = await this.parseOutput({
-        commitment,
-        transactionId: output.transactionId,
-      });
-      if (parseOutputResult.status !== "success") {
-        return parseOutputResult;
-      }
-
-      if (
-        BigInt(parseOutputResult.amountPaid) <
-        BigInt(commitment.output.payment.minAmount)
-      ) {
-        return {
-          status: "failure",
-          reason: "Insufficient output payment",
-        };
-      }
-    }
-
-    return { status: "success" };
   }
-}
+): Promise<ValidateCommitmentExecutionResult> => {
+  // First, validate the commitment data
+  const validateCommitmentDataResult = await validateCommitmentData(
+    commitment,
+    signature
+  );
+  if (validateCommitmentDataResult.status !== "success") {
+    return validateCommitmentDataResult;
+  }
+
+  // Validate the inputs
+  for (const { inputIndex, transactionId } of inputExecutions) {
+    const input = commitment.inputs[inputIndex];
+
+    const parseInputResult = await getCommitmentValidator(
+      chains[input.chain].vmType
+    ).parseInput({
+      commitment,
+      inputIndex,
+      transactionId,
+    });
+    if (parseInputResult.status !== "success") {
+      return parseInputResult;
+    }
+
+    if (BigInt(parseInputResult.amountPaid) < BigInt(input.payment.amount)) {
+      return {
+        status: "failure",
+        reason: "Insufficient input payment",
+      };
+    }
+  }
+
+  // Validate the output
+  {
+    const output = commitment.output;
+
+    const parseOutputResult = await getCommitmentValidator(
+      chains[output.chain].vmType
+    ).parseOutput({
+      commitment,
+      transactionId: outputExecution.transactionId,
+    });
+    if (parseOutputResult.status !== "success") {
+      return parseOutputResult;
+    }
+
+    if (
+      BigInt(parseOutputResult.amountPaid) < BigInt(output.payment.minAmount)
+    ) {
+      return {
+        status: "failure",
+        reason: "Insufficient output payment",
+      };
+    }
+
+    if (!parseOutputResult.callsExecuted) {
+      return {
+        status: "failure",
+        reason: "Output calls not executed",
+      };
+    }
+  }
+
+  return { status: "success" };
+};

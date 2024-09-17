@@ -1,7 +1,7 @@
 import stringify from "safe-stable-stringify";
 import crypto from "crypto";
 
-import { Chain, ChainVmType } from "./chains";
+import { ChainVmType } from "./chains";
 
 export type InputPayment = {
   to: string;
@@ -30,12 +30,12 @@ export type Call = {
 export type Commitment = {
   solver: string;
   inputs: {
-    chain: Chain;
+    chain: string;
     payment: InputPayment;
     refund: OutputPayment[];
   }[];
   output: {
-    chain: Chain;
+    chain: string;
     payment: OutputPayment & { expectedAmount: string; lateAmount: string };
     calls?: Call[];
   };

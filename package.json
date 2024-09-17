@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc -b",
     "start": "node ./dist/index.js",
-    "test": "hardhat test"
+    "test": "(kill-port 8545); (anvil >/dev/null 2>&1 &) && (sleep 3s) && (hardhat test --network local); (kill-port 8545)"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.8",
@@ -21,6 +21,7 @@
     "axios": "^1.7.7",
     "chai": "4.5.0",
     "hardhat": "^2.22.10",
+    "kill-port": "^2.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
   },

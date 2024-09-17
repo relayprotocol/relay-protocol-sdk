@@ -6,7 +6,7 @@ import {
   CommitmentValidator,
   ParseInputResult,
   ParseOutputResult,
-} from "../../index";
+} from "../../types";
 import { ChainVmType, chains } from "../../../chains";
 import { Commitment, EvmCall, getCommitmentId } from "../../../commitment";
 
@@ -168,7 +168,7 @@ export class EvmCommitmentValidator extends CommitmentValidator {
       }
 
       // Extract the commitment id from the calldata
-      commitmentId = "0x" + tx.data.slice(-32);
+      commitmentId = "0x" + tx.data.slice(-64);
     }
 
     // Ensure the parsed commitment id matches the commitment id to validate
@@ -245,7 +245,7 @@ export class EvmCommitmentValidator extends CommitmentValidator {
         reason: "Could not parse request id from end of calldata",
       };
     }
-    const commitmentId = "0x" + tx.data.slice(-32);
+    const commitmentId = "0x" + tx.data.slice(-64);
 
     // Ensure the parsed commitment id matches the commitment id to validate
     if (commitmentId !== getCommitmentId(commitment)) {
