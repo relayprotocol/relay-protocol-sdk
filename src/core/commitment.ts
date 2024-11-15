@@ -167,9 +167,54 @@ export class Commitment {
     this.inputs = inputs;
     this.output = output;
   }
-}
 
-export const COMMITMENT_ID_LENGTH_IN_BYTES = 32;
+  public static COMMITMENT_ID_LENGTH_IN_BYTES = 32;
+
+  public static from(data: Commitment) {
+    return new Commitment(
+      data.solver,
+      data.salt,
+      data.inputs.map(
+        (input) =>
+          new Input(
+            input.chain,
+            new InputPayment(
+              input.payment.to,
+              input.payment.currency,
+              input.payment.amount,
+              input.payment.weight
+            ),
+            input.refunds.map(
+              (refund) =>
+                new RefundPayment(
+                  refund.to,
+                  refund.currency,
+                  refund.minimumAmount
+                )
+            )
+          )
+      ),
+      new Output(
+        data.output.chain,
+        new OutputPayment(
+          data.output.payment.to,
+          data.output.payment.currency,
+          data.output.payment.minimumAmount,
+          data.output.payment.expectedAmount
+        ),
+        data.output.calls.map(
+          (call) =>
+            new CallEvm(
+              (call as CallEvm).from,
+              (call as CallEvm).to,
+              (call as CallEvm).data,
+              (call as CallEvm).value
+            )
+        )
+      )
+    );
+  }
+}
 
 export const getCommitmentId = (commitment: Commitment) => {
   // We use Borsh (https://borsh.io/) so that every commitment has a deterministic serialization

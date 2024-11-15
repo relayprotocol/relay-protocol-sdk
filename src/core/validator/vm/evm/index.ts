@@ -9,7 +9,6 @@ import {
   ValidationResult,
 } from "../../types";
 import {
-  COMMITMENT_ID_LENGTH_IN_BYTES,
   CallEvm,
   ChainVmType,
   Commitment,
@@ -181,7 +180,8 @@ export class EvmCommitmentValidator extends CommitmentValidator {
           if (
             input.payment.to.toLowerCase() === recipient.toLowerCase() &&
             commitmentId ===
-              "0x" + tx.data.slice(-COMMITMENT_ID_LENGTH_IN_BYTES * 2)
+              "0x" +
+                tx.data.slice(-Commitment.COMMITMENT_ID_LENGTH_IN_BYTES * 2)
           ) {
             return {
               status: Status.SUCCESS,
@@ -290,7 +290,7 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     // - the commitment id must be at the end of the transaction data
     if (
       commitmentId !==
-      "0x" + tx.data.slice(-COMMITMENT_ID_LENGTH_IN_BYTES * 2)
+      "0x" + tx.data.slice(-Commitment.COMMITMENT_ID_LENGTH_IN_BYTES * 2)
     )
       if (commitmentId !== getCommitmentId(commitment)) {
         return {

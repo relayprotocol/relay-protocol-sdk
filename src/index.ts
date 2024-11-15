@@ -1,3 +1,4 @@
+import { Commitment, getCommitmentId } from "./core/commitment";
 import { Validator } from "./core/validator";
 
-export { Validator };
+export { Commitment, Validator, getCommitmentId };
