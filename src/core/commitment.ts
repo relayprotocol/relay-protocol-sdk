@@ -1,52 +1,181 @@
-import stringify from "safe-stable-stringify";
+import { field, serialize, variant, vec } from "@dao-xyz/borsh";
 import crypto from "crypto";
 
-import { ChainVmType } from "./chains";
+// Comments:
+// - only inputs will ever have weights: refunds are treated as output payments
 
-export type InputPayment = {
+// At the moment, chains and addresses are represented as plain strings, but we should decide on standard formats for these:
+// - chains: we can either use a standard numeric id or a standard string to identify chains
+// - addresses: depending on the chain of the address we should clarify normalization and encoding rules (eg. lowercase / uppercase / mixedcase)
+
+export enum ChainVmType {
+  EVM = 0,
+  SVM = 1,
+  BVM = 2,
+}
+
+export class InputPayment {
+  @field({ type: "string" })
   to: string;
-  currency: string;
-  amount: string;
-};
 
-export type OutputPayment = {
+  @field({ type: "string" })
+  currency: string;
+
+  @field({ type: "u256" })
+  amount: bigint;
+
+  @field({ type: "u256" })
+  weight: bigint;
+
+  constructor(to: string, currency: string, amount: bigint, weight: bigint) {
+    this.to = to;
+    this.currency = currency;
+    this.amount = amount;
+    this.weight = weight;
+  }
+}
+
+export class RefundPayment {
+  @field({ type: "string" })
   to: string;
-  currency: string;
-  minAmount: string;
-};
 
-export type EvmCall = {
+  @field({ type: "string" })
+  currency: string;
+
+  @field({ type: "u256" })
+  minimumAmount: bigint;
+
+  constructor(to: string, currency: string, minimumAmount: bigint) {
+    this.to = to;
+    this.currency = currency;
+    this.minimumAmount = minimumAmount;
+  }
+}
+
+export class OutputPayment {
+  @field({ type: "string" })
+  to: string;
+
+  @field({ type: "string" })
+  currency: string;
+
+  @field({ type: "u256" })
+  expectedAmount: bigint;
+
+  @field({ type: "u256" })
+  minimumAmount: bigint;
+
+  constructor(
+    to: string,
+    currency: string,
+    minimumAmount: bigint,
+    expectedAmount: bigint
+  ) {
+    this.to = to;
+    this.currency = currency;
+    this.minimumAmount = minimumAmount;
+    this.expectedAmount = expectedAmount;
+  }
+}
+
+abstract class CallBase {}
+
+@variant(ChainVmType.EVM)
+export class CallEvm extends CallBase {
+  @field({ type: "string" })
   from: string;
+
+  @field({ type: "string" })
   to: string;
+
+  @field({ type: "string" })
   data: string;
-  value: string;
-};
 
-export type Call = {
-  vmType: Extract<ChainVmType, "evm">;
-  data: EvmCall;
-};
+  @field({ type: "u256" })
+  value: bigint;
 
-export type Commitment = {
+  constructor(from: string, to: string, data: string, value: bigint) {
+    super();
+
+    this.from = from;
+    this.to = to;
+    this.data = data;
+    this.value = value;
+  }
+}
+
+export class Input {
+  @field({ type: "string" })
+  chain: string;
+
+  @field({ type: InputPayment })
+  payment: InputPayment;
+
+  @field({ type: vec(RefundPayment) })
+  refunds: RefundPayment[];
+
+  constructor(chain: string, payment: InputPayment, refunds: RefundPayment[]) {
+    this.chain = chain;
+    this.payment = payment;
+    this.refunds = refunds;
+  }
+}
+
+export class Output {
+  @field({ type: "string" })
+  chain: string;
+
+  @field({ type: OutputPayment })
+  payment: OutputPayment;
+
+  @field({ type: vec(CallBase) })
+  calls: CallBase[];
+
+  constructor(chain: string, payment: OutputPayment, calls: CallBase[]) {
+    this.chain = chain;
+    this.payment = payment;
+    this.calls = calls;
+  }
+}
+
+export class Commitment {
+  // The address of the solver which will insure the request
+  @field({ type: "string" })
   solver: string;
-  inputs: {
-    chain: string;
-    payment: InputPayment;
-    refund: OutputPayment[];
-  }[];
-  output: {
-    chain: string;
-    payment: OutputPayment & { expectedAmount: string; lateAmount: string };
-    calls?: Call[];
-  };
-  salt: string;
-};
 
-// TODO: Switch to using Borsh instead
+  // Random salt value to ensure commitment uniqueness
+  @field({ type: "u256" })
+  salt: bigint;
+
+  // A commitment can have multiple inputs, each specifying:
+  // - the chain of the input payment
+  // - the input payment details
+  // - a list of refund options for when the payment was sent but the solver is unable to fulfill the commitment
+  @field({ type: vec(Input) })
+  inputs: Input[];
+
+  // A commitment can have a single output, specifying:
+  // - the chain of the output fill
+  // - the output payment details
+  // - a list of calls to be executed
+  @field({ type: Output })
+  output: Output;
+
+  constructor(solver: string, salt: bigint, inputs: Input[], output: Output) {
+    this.solver = solver;
+    this.salt = salt;
+    this.inputs = inputs;
+    this.output = output;
+  }
+}
+
+export const COMMITMENT_ID_LENGTH_IN_BYTES = 32;
+
 export const getCommitmentId = (commitment: Commitment) => {
-  const stringifiedCommitment = stringify(commitment);
+  // We use Borsh (https://borsh.io/) so that every commitment has a deterministic serialization
+  const serializedCommitment = serialize(commitment);
   return (
     "0x" +
-    crypto.createHash("sha256").update(stringifiedCommitment).digest("hex")
+    crypto.createHash("sha256").update(serializedCommitment).digest("hex")
   );
 };
