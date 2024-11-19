@@ -139,9 +139,20 @@ export class Output {
 }
 
 export class Commitment {
+  // The onchain identifier of the commitment
+  // This is only needed to maintain backwards-compatibility with the old flows,
+  // where the onchain identifier of the request is generated based on the order
+  // format which the solver uses internally.
+  @field({ type: "u256" })
+  id: bigint;
+
   // The address of the solver which will insure the request
   @field({ type: "string" })
   solver: string;
+
+  // The bond amount for this commitment
+  @field({ type: "u256" })
+  bond: bigint;
 
   // Random salt value to ensure commitment uniqueness
   @field({ type: "u256" })
@@ -161,17 +172,28 @@ export class Commitment {
   @field({ type: Output })
   output: Output;
 
-  constructor(solver: string, salt: bigint, inputs: Input[], output: Output) {
+  constructor(
+    id: bigint,
+    bond: bigint,
+    solver: string,
+    salt: bigint,
+    inputs: Input[],
+    output: Output
+  ) {
+    this.id = id;
+    this.bond = bond;
     this.solver = solver;
     this.salt = salt;
     this.inputs = inputs;
     this.output = output;
   }
 
-  public static COMMITMENT_ID_LENGTH_IN_BYTES = 32;
+  public static ID_LENGTH_IN_BYTES = 32;
 
   public static from(data: Commitment) {
     return new Commitment(
+      data.id,
+      data.bond,
       data.solver,
       data.salt,
       data.inputs.map(

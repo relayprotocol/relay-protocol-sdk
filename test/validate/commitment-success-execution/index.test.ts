@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import crypto from "crypto";
 import { getBytes } from "ethers";
 import hre from "hardhat";
 
@@ -9,6 +10,7 @@ import {
 } from "../../../src/core/commitment";
 import { Validator } from "../../../src/core/validator";
 import { ChainConfig, Status } from "../../../src/core/validator/types";
+import { bigintToHexString } from "../../../src/core/utils";
 
 describe("Validate commitment execution", () => {
   const chainConfigs: Record<string, ChainConfig> = {
@@ -19,10 +21,12 @@ describe("Validate commitment execution", () => {
   };
 
   it("success case", async () => {
-    const [user, solver] = await hre.ethers.getSigners();
+    const [user, solver] = await (hre as any).ethers.getSigners();
 
     const commitment = Commitment.from({
+      id: BigInt("0x" + crypto.randomBytes(32).toString("hex")),
       solver: solver.address,
+      bond: 1000000000000000000n,
       salt: 0n,
       inputs: [
         {
@@ -54,20 +58,21 @@ describe("Validate commitment execution", () => {
       },
     });
 
-    const commitmentId = getCommitmentId(commitment);
-    const signature = await solver.signMessage(getBytes(commitmentId));
+    const signature = await solver.signMessage(
+      getBytes(getCommitmentId(commitment))
+    );
 
     // Execute the input
     const inputTransaction = await user.sendTransaction({
       to: commitment.inputs[0].payment.to,
-      data: commitmentId,
+      data: bigintToHexString(commitment.id),
       value: commitment.inputs[0].payment.amount,
     });
 
     // Execute the output
     const outputTransaction = await solver.sendTransaction({
       to: commitment.output.payment.to,
-      data: commitmentId,
+      data: bigintToHexString(commitment.id),
       value: commitment.output.payment.minimumAmount,
     });
 

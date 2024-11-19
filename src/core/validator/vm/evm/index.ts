@@ -8,12 +8,8 @@ import {
   Status,
   ValidationResult,
 } from "../../types";
-import {
-  CallEvm,
-  ChainVmType,
-  Commitment,
-  getCommitmentId,
-} from "../../../commitment";
+import { CallEvm, ChainVmType, Commitment } from "../../../commitment";
+import { bigintToHexString } from "../../../utils";
 
 const NATIVE_CURRENCY = "0x0000000000000000000000000000000000000000";
 
@@ -140,9 +136,6 @@ export class EvmCommitmentValidator extends CommitmentValidator {
       };
     }
 
-    // Get the commitment id
-    const commitmentId = getCommitmentId(commitment);
-
     // Case 1: direct native payment
     if (input.payment.to.toLowerCase() === tx.to?.toLowerCase()) {
       // Checks:
@@ -150,7 +143,7 @@ export class EvmCommitmentValidator extends CommitmentValidator {
       // - the commitment id must match the transaction data
       if (
         input.payment.currency.toLowerCase() === NATIVE_CURRENCY &&
-        commitmentId === tx.data
+        bigintToHexString(commitment.id) === tx.data
       ) {
         return {
           status: Status.SUCCESS,
@@ -179,9 +172,8 @@ export class EvmCommitmentValidator extends CommitmentValidator {
           // - the commitment id must be at the end of the transaction data
           if (
             input.payment.to.toLowerCase() === recipient.toLowerCase() &&
-            commitmentId ===
-              "0x" +
-                tx.data.slice(-Commitment.COMMITMENT_ID_LENGTH_IN_BYTES * 2)
+            bigintToHexString(commitment.id) ===
+              "0x" + tx.data.slice(-Commitment.ID_LENGTH_IN_BYTES * 2)
           ) {
             return {
               status: Status.SUCCESS,
@@ -214,7 +206,8 @@ export class EvmCommitmentValidator extends CommitmentValidator {
         input.payment.to.toLowerCase() === decoded.args.to.toLowerCase() &&
         input.payment.currency.toLowerCase() ===
           decoded.args.currency.toLowerCase() &&
-        commitmentId === decoded.args.commitmentId.toLowerCase()
+        bigintToHexString(commitment.id) ===
+          decoded.args.commitmentId.toLowerCase()
       ) {
         return {
           status: Status.SUCCESS,
@@ -283,21 +276,17 @@ export class EvmCommitmentValidator extends CommitmentValidator {
       };
     }
 
-    // Get the commitment id
-    const commitmentId = getCommitmentId(commitment);
-
     // Checks:
     // - the commitment id must be at the end of the transaction data
     if (
-      commitmentId !==
-      "0x" + tx.data.slice(-Commitment.COMMITMENT_ID_LENGTH_IN_BYTES * 2)
-    )
-      if (commitmentId !== getCommitmentId(commitment)) {
-        return {
-          status: Status.FAILURE,
-          reason: CommonFailureReason.NON_MATCHING_TRANSACTION,
-        };
-      }
+      bigintToHexString(commitment.id) !==
+      "0x" + tx.data.slice(-Commitment.ID_LENGTH_IN_BYTES * 2)
+    ) {
+      return {
+        status: Status.FAILURE,
+        reason: CommonFailureReason.NON_MATCHING_TRANSACTION,
+      };
+    }
 
     // Utility to avoid making more than one tracing call
     let txCalls: CallEvm[] | undefined;
