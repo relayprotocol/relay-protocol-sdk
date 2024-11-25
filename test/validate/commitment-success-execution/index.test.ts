@@ -10,7 +10,6 @@ import {
 } from "../../../src/core/commitment";
 import { Validator } from "../../../src/core/validator";
 import { ChainConfig, Status } from "../../../src/core/validator/types";
-import { bigintToHexString } from "../../../src/core/utils";
 
 describe("Validate commitment execution", () => {
   const chainConfigs: Record<string, ChainConfig> = {
@@ -23,24 +22,25 @@ describe("Validate commitment execution", () => {
   it("success case", async () => {
     const [user, solver] = await (hre as any).ethers.getSigners();
 
-    const commitment = Commitment.from({
-      id: BigInt("0x" + crypto.randomBytes(32).toString("hex")),
+    const commitment: Commitment = {
+      id: "0x" + crypto.randomBytes(32).toString("hex"),
       solver: solver.address,
-      bond: 1000000000000000000n,
-      salt: 0n,
+      bond: "1000000000000000000",
+      salt: "0",
       inputs: [
         {
           chain: "ethereum",
           payment: {
             currency: "0x0000000000000000000000000000000000000000",
-            amount: 1000000000000000000n,
+            amount: "1000000000000000000",
             to: solver.address,
-            weight: 1n,
+            weight: "1",
           },
           refunds: [
             {
+              chain: "ethereum",
               currency: "0x0000000000000000000000000000000000000000",
-              minimumAmount: 9900000000000000000n,
+              minimumAmount: "9900000000000000000",
               to: user.address,
             },
           ],
@@ -50,13 +50,13 @@ describe("Validate commitment execution", () => {
         chain: "ethereum",
         payment: {
           currency: "0x0000000000000000000000000000000000000000",
-          minimumAmount: 9900000000000000000n,
-          expectedAmount: 9900000000000000000n,
+          minimumAmount: "9900000000000000000",
+          expectedAmount: "9900000000000000000",
           to: user.address,
         },
         calls: [],
       },
-    });
+    };
 
     const signature = await solver.signMessage(
       getBytes(getCommitmentId(commitment))
@@ -65,14 +65,14 @@ describe("Validate commitment execution", () => {
     // Execute the input
     const inputTransaction = await user.sendTransaction({
       to: commitment.inputs[0].payment.to,
-      data: bigintToHexString(commitment.id),
+      data: commitment.id,
       value: commitment.inputs[0].payment.amount,
     });
 
     // Execute the output
     const outputTransaction = await solver.sendTransaction({
       to: commitment.output.payment.to,
-      data: bigintToHexString(commitment.id),
+      data: commitment.id,
       value: commitment.output.payment.minimumAmount,
     });
 

@@ -1,9 +1,6 @@
 import { field, serialize, variant, vec } from "@dao-xyz/borsh";
 import crypto from "crypto";
 
-// Comments:
-// - only inputs will ever have weights: refunds are treated as output payments
-
 // At the moment, chains and addresses are represented as plain strings, but we should decide on standard formats for these:
 // - chains: we can either use a standard numeric id or a standard string to identify chains
 // - addresses: depending on the chain of the address we should clarify normalization and encoding rules (eg. lowercase / uppercase / mixedcase)
@@ -14,7 +11,9 @@ export enum ChainVmType {
   BVM = 2,
 }
 
-export class InputPayment {
+// Annotated classes used for the Borsh serialization
+
+class AnnotatedInputPayment {
   @field({ type: "string" })
   to: string;
 
@@ -35,7 +34,10 @@ export class InputPayment {
   }
 }
 
-export class RefundPayment {
+class AnnotatedRefundPayment {
+  @field({ type: "string" })
+  chain: string;
+
   @field({ type: "string" })
   to: string;
 
@@ -45,14 +47,20 @@ export class RefundPayment {
   @field({ type: "u256" })
   minimumAmount: bigint;
 
-  constructor(to: string, currency: string, minimumAmount: bigint) {
+  constructor(
+    chain: string,
+    to: string,
+    currency: string,
+    minimumAmount: bigint
+  ) {
+    this.chain = chain;
     this.to = to;
     this.currency = currency;
     this.minimumAmount = minimumAmount;
   }
 }
 
-export class OutputPayment {
+class AnnotatedOutputPayment {
   @field({ type: "string" })
   to: string;
 
@@ -78,10 +86,10 @@ export class OutputPayment {
   }
 }
 
-abstract class CallBase {}
+abstract class AnnotatedCallBase {}
 
 @variant(ChainVmType.EVM)
-export class CallEvm extends CallBase {
+class AnnotatedCallEvm extends AnnotatedCallBase {
   @field({ type: "string" })
   from: string;
 
@@ -104,81 +112,74 @@ export class CallEvm extends CallBase {
   }
 }
 
-export class Input {
+class AnnotatedInput {
   @field({ type: "string" })
   chain: string;
 
-  @field({ type: InputPayment })
-  payment: InputPayment;
+  @field({ type: AnnotatedInputPayment })
+  payment: AnnotatedInputPayment;
 
-  @field({ type: vec(RefundPayment) })
-  refunds: RefundPayment[];
+  @field({ type: vec(AnnotatedRefundPayment) })
+  refunds: AnnotatedRefundPayment[];
 
-  constructor(chain: string, payment: InputPayment, refunds: RefundPayment[]) {
+  constructor(
+    chain: string,
+    payment: AnnotatedInputPayment,
+    refunds: AnnotatedRefundPayment[]
+  ) {
     this.chain = chain;
     this.payment = payment;
     this.refunds = refunds;
   }
 }
 
-export class Output {
+class AnnotatedOutput {
   @field({ type: "string" })
   chain: string;
 
-  @field({ type: OutputPayment })
-  payment: OutputPayment;
+  @field({ type: AnnotatedOutputPayment })
+  payment: AnnotatedOutputPayment;
 
-  @field({ type: vec(CallBase) })
-  calls: CallBase[];
+  @field({ type: vec(AnnotatedCallBase) })
+  calls: AnnotatedCallBase[];
 
-  constructor(chain: string, payment: OutputPayment, calls: CallBase[]) {
+  constructor(
+    chain: string,
+    payment: AnnotatedOutputPayment,
+    calls: AnnotatedCallBase[]
+  ) {
     this.chain = chain;
     this.payment = payment;
     this.calls = calls;
   }
 }
 
-export class Commitment {
-  // The onchain identifier of the commitment
-  // This is only needed to maintain backwards-compatibility with the old flows,
-  // where the onchain identifier of the request is generated based on the order
-  // format which the solver uses internally.
+class AnnotatedCommitment {
   @field({ type: "u256" })
   id: bigint;
 
-  // The address of the solver which will insure the request
   @field({ type: "string" })
   solver: string;
 
-  // The bond amount for this commitment
   @field({ type: "u256" })
   bond: bigint;
 
-  // Random salt value to ensure commitment uniqueness
   @field({ type: "u256" })
   salt: bigint;
 
-  // A commitment can have multiple inputs, each specifying:
-  // - the chain of the input payment
-  // - the input payment details
-  // - a list of refund options for when the payment was sent but the solver is unable to fulfill the commitment
-  @field({ type: vec(Input) })
-  inputs: Input[];
+  @field({ type: vec(AnnotatedInput) })
+  inputs: AnnotatedInput[];
 
-  // A commitment can have a single output, specifying:
-  // - the chain of the output fill
-  // - the output payment details
-  // - a list of calls to be executed
-  @field({ type: Output })
-  output: Output;
+  @field({ type: AnnotatedOutput })
+  output: AnnotatedOutput;
 
   constructor(
     id: bigint,
     bond: bigint,
     solver: string,
     salt: bigint,
-    inputs: Input[],
-    output: Output
+    inputs: AnnotatedInput[],
+    output: AnnotatedOutput
   ) {
     this.id = id;
     this.bond = bond;
@@ -188,49 +189,48 @@ export class Commitment {
     this.output = output;
   }
 
-  public static ID_LENGTH_IN_BYTES = 32;
-
   public static from(data: Commitment) {
-    return new Commitment(
-      data.id,
-      data.bond,
+    return new AnnotatedCommitment(
+      BigInt(data.id),
+      BigInt(data.bond),
       data.solver,
-      data.salt,
+      BigInt(data.salt),
       data.inputs.map(
         (input) =>
-          new Input(
+          new AnnotatedInput(
             input.chain,
-            new InputPayment(
+            new AnnotatedInputPayment(
               input.payment.to,
               input.payment.currency,
-              input.payment.amount,
-              input.payment.weight
+              BigInt(input.payment.amount),
+              BigInt(input.payment.weight)
             ),
             input.refunds.map(
               (refund) =>
-                new RefundPayment(
+                new AnnotatedRefundPayment(
+                  refund.chain,
                   refund.to,
                   refund.currency,
-                  refund.minimumAmount
+                  BigInt(refund.minimumAmount)
                 )
             )
           )
       ),
-      new Output(
+      new AnnotatedOutput(
         data.output.chain,
-        new OutputPayment(
+        new AnnotatedOutputPayment(
           data.output.payment.to,
           data.output.payment.currency,
-          data.output.payment.minimumAmount,
-          data.output.payment.expectedAmount
+          BigInt(data.output.payment.minimumAmount),
+          BigInt(data.output.payment.expectedAmount)
         ),
         data.output.calls.map(
           (call) =>
-            new CallEvm(
-              (call as CallEvm).from,
-              (call as CallEvm).to,
-              (call as CallEvm).data,
-              (call as CallEvm).value
+            new AnnotatedCallEvm(
+              call.from,
+              call.to,
+              call.data,
+              BigInt(call.value)
             )
         )
       )
@@ -238,9 +238,68 @@ export class Commitment {
   }
 }
 
+export const COMMITMENT_ID_LENGTH_IN_BYTES = 32;
+
+export type Commitment = {
+  // The onchain identifier of the commitment
+  // This is only needed to maintain backwards-compatibility with the old flows,
+  // where the onchain identifier of the request is generated based on the order
+  // format which the solver uses internally.
+  id: string;
+
+  // The address of the solver which will insure the request
+  solver: string;
+
+  // The bond amount for this commitment
+  bond: string;
+
+  // Random salt value to ensure commitment uniqueness
+  salt: string;
+
+  // A commitment can have multiple inputs, each specifying:
+  // - the chain of the input payment
+  // - the input payment details
+  // - a list of refund options for when the payment was sent but the solver is unable to fulfill the commitment
+  inputs: {
+    chain: string;
+    payment: {
+      to: string;
+      currency: string;
+      amount: string;
+      weight: string;
+    };
+    refunds: {
+      chain: string;
+      to: string;
+      currency: string;
+      minimumAmount: string;
+    }[];
+  }[];
+
+  // A commitment can have a single output, specifying:
+  // - the chain of the output fill
+  // - the output payment details
+  // - a list of calls to be executed
+  output: {
+    chain: string;
+    payment: {
+      to: string;
+      currency: string;
+      minimumAmount: string;
+      expectedAmount: string;
+    };
+    calls: {
+      from: string;
+      to: string;
+      data: string;
+      value: string;
+    }[];
+  };
+};
+
 export const getCommitmentId = (commitment: Commitment) => {
   // We use Borsh (https://borsh.io/) so that every commitment has a deterministic serialization
-  const serializedCommitment = serialize(commitment);
+  const serializedCommitment = serialize(AnnotatedCommitment.from(commitment));
   return (
     "0x" +
     crypto.createHash("sha256").update(serializedCommitment).digest("hex")

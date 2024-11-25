@@ -98,9 +98,9 @@ export class Validator {
       }
 
       inputAmounts.push({
-        committed: input.payment.amount,
+        committed: BigInt(input.payment.amount),
         actual: validationResult.amount,
-        weight: input.payment.weight,
+        weight: BigInt(input.payment.weight),
       });
     }
 
@@ -124,7 +124,7 @@ export class Validator {
       }
 
       outputAmount = {
-        committed: output.payment.minimumAmount,
+        committed: BigInt(output.payment.minimumAmount),
         actual: validationResult.amount,
       };
     }

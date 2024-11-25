@@ -8,8 +8,11 @@ import {
   Status,
   ValidationResult,
 } from "../../types";
-import { CallEvm, ChainVmType, Commitment } from "../../../commitment";
-import { bigintToHexString } from "../../../utils";
+import {
+  COMMITMENT_ID_LENGTH_IN_BYTES,
+  ChainVmType,
+  Commitment,
+} from "../../../commitment";
 
 const NATIVE_CURRENCY = "0x0000000000000000000000000000000000000000";
 
@@ -40,6 +43,13 @@ const getTransferLogs = (logs: readonly Log[]) =>
 const getRelayDepositLogs = (logs: readonly Log[]) =>
   logs.filter((log) => log.topics[0] === RELAY_DEPOSIT_TOPIC);
 
+type CallEvm = {
+  from: string;
+  to: string;
+  data: string;
+  value: string;
+};
+
 const extractAllCalls = (trace: CallTrace): CallEvm[] => {
   // Skip reverted calls
   if (trace.error) {
@@ -56,7 +66,7 @@ const extractAllCalls = (trace: CallTrace): CallEvm[] => {
       from: trace.from,
       to: trace.to,
       data: trace.input,
-      value: BigInt(trace.value ?? "0"),
+      value: BigInt(trace.value ?? "0").toString(),
     },
   ];
   for (const c of trace.calls ?? []) {
@@ -143,7 +153,7 @@ export class EvmCommitmentValidator extends CommitmentValidator {
       // - the commitment id must match the transaction data
       if (
         input.payment.currency.toLowerCase() === NATIVE_CURRENCY &&
-        bigintToHexString(commitment.id) === tx.data
+        commitment.id === tx.data
       ) {
         return {
           status: Status.SUCCESS,
@@ -172,8 +182,8 @@ export class EvmCommitmentValidator extends CommitmentValidator {
           // - the commitment id must be at the end of the transaction data
           if (
             input.payment.to.toLowerCase() === recipient.toLowerCase() &&
-            bigintToHexString(commitment.id) ===
-              "0x" + tx.data.slice(-Commitment.ID_LENGTH_IN_BYTES * 2)
+            commitment.id ===
+              "0x" + tx.data.slice(-COMMITMENT_ID_LENGTH_IN_BYTES * 2)
           ) {
             return {
               status: Status.SUCCESS,
@@ -206,8 +216,7 @@ export class EvmCommitmentValidator extends CommitmentValidator {
         input.payment.to.toLowerCase() === decoded.args.to.toLowerCase() &&
         input.payment.currency.toLowerCase() ===
           decoded.args.currency.toLowerCase() &&
-        bigintToHexString(commitment.id) ===
-          decoded.args.commitmentId.toLowerCase()
+        commitment.id === decoded.args.commitmentId.toLowerCase()
       ) {
         return {
           status: Status.SUCCESS,
@@ -279,8 +288,8 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     // Checks:
     // - the commitment id must be at the end of the transaction data
     if (
-      bigintToHexString(commitment.id) !==
-      "0x" + tx.data.slice(-Commitment.ID_LENGTH_IN_BYTES * 2)
+      commitment.id !==
+      "0x" + tx.data.slice(-COMMITMENT_ID_LENGTH_IN_BYTES * 2)
     ) {
       return {
         status: Status.FAILURE,
@@ -317,7 +326,7 @@ export class EvmCommitmentValidator extends CommitmentValidator {
         for (let i = 0; i < calls.length; i++) {
           const call = calls[i];
           if (call.to.toLowerCase() === output.payment.to.toLowerCase()) {
-            amount = call.value;
+            amount = BigInt(call.value);
 
             // Mark the current index as being processed
             processedTxCallIndexes.push(i);
@@ -356,13 +365,6 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     const outputCalls = output.calls;
     if (outputCalls.length) {
       for (const outputCall of outputCalls) {
-        if (!(outputCall instanceof CallEvm)) {
-          return {
-            status: Status.FAILURE,
-            reason: CommonFailureReason.INVALID_OUTPUT_CALL,
-          };
-        }
-
         const txCalls = await getCallsWithCache();
 
         const lastProcessedTxCallIndex = processedTxCallIndexes.length
