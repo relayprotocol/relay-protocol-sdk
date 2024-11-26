@@ -1,10 +1,10 @@
 import { Interface, JsonRpcProvider, Log } from "ethers";
 
 import { CallTrace, getTrace } from "./trace";
-import { CommonFailureReason } from "../common";
 import {
   ChainConfig,
   CommitmentValidator,
+  Side,
   Status,
   ValidationResult,
 } from "../../types";
@@ -76,10 +76,19 @@ const extractAllCalls = (trace: CallTrace): CallEvm[] => {
   return results;
 };
 
-enum EvmFailureReason {
-  MISSING_TRANSACTION_RECEIPT = "MISSING_TRANSACTION_RECEIPT",
+enum ErrorReason {
+  INPUT_DOES_NOT_EXIST = "INPUT_DOES_NOT_EXIST",
+  UNSUPPORTED_CHAIN = "UNSUPPORTED_CHAIN",
+  WRONG_CHAIN_VM_TYPE = "WRONG_CHAIN_VM_TYPE",
   MISSING_TRANSACTION_RESPONSE = "MISSING_TRANSACTION_RESPONSE",
+  MISSING_TRANSACTION_RECEIPT = "MISSING_TRANSACTION_RECEIPT",
   TRANSACTION_REVERTED = "TRANSACTION_REVERTED",
+  DIRECT_NATIVE_PAYMENT_MISMATCH = "DIRECT_NATIVE_PAYMENT_MISMATCH",
+  DIRECT_ERC20_PAYMENT_MISMATCH = "DIRECT_ERC20_PAYMENT_MISMATCH",
+  CONTRACT_PAYMENT_MISMATCH = "CONTRACT_PAYMENT_MISMATCH",
+  COMMITMENT_ID_NOT_AT_END_OF_CALLDATA = "COMMITMENT_ID_NOT_AT_END_OF_CALLDATA",
+  COULD_NOT_FIND_PAYMENT = "COULD_NOT_FIND_PAYMENT",
+  MISSING_OUTPUT_CALLS = "MISSING_OUTPUT_CALLS",
 }
 
 export class EvmCommitmentValidator extends CommitmentValidator {
@@ -99,7 +108,13 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     if (!input) {
       return {
         status: Status.FAILURE,
-        reason: CommonFailureReason.INVALID_INPUT,
+        details: {
+          reason: ErrorReason.INPUT_DOES_NOT_EXIST,
+          side: Side.INPUT,
+          commitment,
+          inputIndex,
+          chainConfigs,
+        },
       };
     }
 
@@ -108,13 +123,25 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     if (!chainData) {
       return {
         status: Status.FAILURE,
-        reason: CommonFailureReason.UNSUPPORTED_CHAIN,
+        details: {
+          reason: ErrorReason.UNSUPPORTED_CHAIN,
+          side: Side.INPUT,
+          commitment,
+          inputIndex,
+          chainConfigs,
+        },
       };
     }
     if (chainData.vmType !== ChainVmType.EVM) {
       return {
         status: Status.FAILURE,
-        reason: CommonFailureReason.WRONG_VM_TYPE,
+        details: {
+          reason: ErrorReason.WRONG_CHAIN_VM_TYPE,
+          side: Side.INPUT,
+          commitment,
+          inputIndex,
+          chainConfigs,
+        },
       };
     }
 
@@ -125,7 +152,14 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     if (!tx) {
       return {
         status: Status.FAILURE,
-        reason: EvmFailureReason.MISSING_TRANSACTION_RESPONSE,
+        details: {
+          reason: ErrorReason.MISSING_TRANSACTION_RESPONSE,
+          side: Side.INPUT,
+          commitment,
+          inputIndex,
+          chainConfigs,
+          transactionId,
+        },
       };
     }
 
@@ -134,7 +168,14 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     if (!txReceipt) {
       return {
         status: Status.FAILURE,
-        reason: EvmFailureReason.MISSING_TRANSACTION_RECEIPT,
+        details: {
+          reason: ErrorReason.MISSING_TRANSACTION_RECEIPT,
+          side: Side.INPUT,
+          commitment,
+          inputIndex,
+          chainConfigs,
+          transactionId,
+        },
       };
     }
 
@@ -142,7 +183,14 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     if (txReceipt.status !== 1) {
       return {
         status: Status.FAILURE,
-        reason: EvmFailureReason.TRANSACTION_REVERTED,
+        details: {
+          reason: ErrorReason.TRANSACTION_REVERTED,
+          side: Side.INPUT,
+          commitment,
+          inputIndex,
+          chainConfigs,
+          transactionId,
+        },
       };
     }
 
@@ -163,7 +211,14 @@ export class EvmCommitmentValidator extends CommitmentValidator {
 
       return {
         status: Status.FAILURE,
-        reason: CommonFailureReason.NON_MATCHING_TRANSACTION,
+        details: {
+          reason: ErrorReason.DIRECT_NATIVE_PAYMENT_MISMATCH,
+          side: Side.INPUT,
+          commitment,
+          inputIndex,
+          chainConfigs,
+          transactionId,
+        },
       };
     }
 
@@ -197,7 +252,14 @@ export class EvmCommitmentValidator extends CommitmentValidator {
 
       return {
         status: Status.FAILURE,
-        reason: CommonFailureReason.NON_MATCHING_TRANSACTION,
+        details: {
+          reason: ErrorReason.DIRECT_ERC20_PAYMENT_MISMATCH,
+          side: Side.INPUT,
+          commitment,
+          inputIndex,
+          chainConfigs,
+          transactionId,
+        },
       };
     }
 
@@ -227,7 +289,14 @@ export class EvmCommitmentValidator extends CommitmentValidator {
 
     return {
       status: Status.FAILURE,
-      reason: CommonFailureReason.NON_MATCHING_TRANSACTION,
+      details: {
+        reason: ErrorReason.CONTRACT_PAYMENT_MISMATCH,
+        side: Side.INPUT,
+        commitment,
+        inputIndex,
+        chainConfigs,
+        transactionId,
+      },
     };
   }
 
@@ -247,13 +316,23 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     if (!chainData) {
       return {
         status: Status.FAILURE,
-        reason: CommonFailureReason.UNSUPPORTED_CHAIN,
+        details: {
+          reason: ErrorReason.UNSUPPORTED_CHAIN,
+          side: Side.OUTPUT,
+          commitment,
+          chainConfigs,
+        },
       };
     }
     if (chainData.vmType !== ChainVmType.EVM) {
       return {
         status: Status.FAILURE,
-        reason: CommonFailureReason.WRONG_VM_TYPE,
+        details: {
+          reason: ErrorReason.WRONG_CHAIN_VM_TYPE,
+          side: Side.OUTPUT,
+          commitment,
+          chainConfigs,
+        },
       };
     }
 
@@ -264,7 +343,13 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     if (!tx) {
       return {
         status: Status.FAILURE,
-        reason: EvmFailureReason.MISSING_TRANSACTION_RESPONSE,
+        details: {
+          reason: ErrorReason.MISSING_TRANSACTION_RESPONSE,
+          side: Side.OUTPUT,
+          commitment,
+          chainConfigs,
+          transactionId,
+        },
       };
     }
 
@@ -273,7 +358,13 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     if (!txReceipt) {
       return {
         status: Status.FAILURE,
-        reason: EvmFailureReason.MISSING_TRANSACTION_RECEIPT,
+        details: {
+          reason: ErrorReason.MISSING_TRANSACTION_RECEIPT,
+          side: Side.OUTPUT,
+          commitment,
+          chainConfigs,
+          transactionId,
+        },
       };
     }
 
@@ -281,7 +372,13 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     if (txReceipt.status !== 1) {
       return {
         status: Status.FAILURE,
-        reason: EvmFailureReason.TRANSACTION_REVERTED,
+        details: {
+          reason: ErrorReason.TRANSACTION_REVERTED,
+          side: Side.OUTPUT,
+          commitment,
+          chainConfigs,
+          transactionId,
+        },
       };
     }
 
@@ -293,7 +390,13 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     ) {
       return {
         status: Status.FAILURE,
-        reason: CommonFailureReason.NON_MATCHING_TRANSACTION,
+        details: {
+          reason: ErrorReason.COMMITMENT_ID_NOT_AT_END_OF_CALLDATA,
+          side: Side.OUTPUT,
+          commitment,
+          chainConfigs,
+          transactionId,
+        },
       };
     }
 
@@ -356,7 +459,13 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     if (!amount) {
       return {
         status: Status.FAILURE,
-        reason: CommonFailureReason.NON_MATCHING_TRANSACTION,
+        details: {
+          reason: ErrorReason.COULD_NOT_FIND_PAYMENT,
+          side: Side.OUTPUT,
+          commitment,
+          chainConfigs,
+          transactionId,
+        },
       };
     }
 
@@ -385,7 +494,13 @@ export class EvmCommitmentValidator extends CommitmentValidator {
 
         return {
           status: Status.FAILURE,
-          reason: CommonFailureReason.OUTPUT_CALLS_NOT_EXECUTED,
+          details: {
+            reason: ErrorReason.MISSING_OUTPUT_CALLS,
+            side: Side.OUTPUT,
+            commitment,
+            chainConfigs,
+            transactionId,
+          },
         };
       }
     }

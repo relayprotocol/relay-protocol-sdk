@@ -6,13 +6,18 @@ export type ChainConfig = {
 };
 
 export enum Status {
-  SUCCESS = "success",
-  FAILURE = "failure",
+  SUCCESS = "SUCCESS",
+  FAILURE = "FAILURE",
+}
+
+export enum Side {
+  INPUT = "INPUT",
+  OUTPUT = "OUTPUT",
 }
 
 export type ValidationResult =
   | { status: Status.SUCCESS; amount: bigint }
-  | { status: Status.FAILURE; reason: string };
+  | { status: Status.FAILURE; details: any };
 
 export abstract class CommitmentValidator {
   public abstract validateInput(data: {

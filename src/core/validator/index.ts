@@ -1,15 +1,19 @@
 import { getBytes, verifyMessage } from "ethers";
 
-import { ChainConfig, Status } from "./types";
-import { CommonFailureReason } from "./vm/common";
+import { ChainConfig, Side, Status } from "./types";
 import { EvmCommitmentValidator } from "./vm/evm";
 import { ChainVmType, Commitment, getCommitmentId } from "../commitment";
 
 const BPS_UNIT = 1000000000000000000n;
 
-type Result =
-  | { status: Status }
-  | { status: Status; reason: CommonFailureReason };
+type Result = { status: Status } | { status: Status; details: any };
+
+enum ErrorReason {
+  UNSUPPORTED_CHAIN = "UNSUPPORTED_CHAIN",
+  MISSING_REFUND_OPTIONS = "MISSING_REFUND_OPTIONS",
+  INVALID_SIGNATURE = "INVALID_SIGNATURE",
+  INSUFFICIENT_OUTPUT_PAYMENT_AMOUNT = "INSUFFICIENT_OUTPUT_PAYMENT_AMOUNT",
+}
 
 export class Validator {
   public chainConfigs: Record<string, ChainConfig>;
@@ -29,7 +33,13 @@ export class Validator {
       if (!chain) {
         return {
           status: Status.FAILURE,
-          reason: CommonFailureReason.UNSUPPORTED_CHAIN,
+          details: {
+            reason: ErrorReason.UNSUPPORTED_CHAIN,
+            side: Side.INPUT,
+            commitment,
+            input,
+            chainConfigs: this.chainConfigs,
+          },
         };
       }
 
@@ -37,7 +47,13 @@ export class Validator {
       if (!input.refunds.length) {
         return {
           status: Status.FAILURE,
-          reason: CommonFailureReason.MISSING_REFUND_OPTIONS,
+          details: {
+            reason: ErrorReason.MISSING_REFUND_OPTIONS,
+            side: Side.INPUT,
+            commitment,
+            input,
+            chainConfigs: this.chainConfigs,
+          },
         };
       }
     }
@@ -47,7 +63,12 @@ export class Validator {
     if (!chain) {
       return {
         status: Status.FAILURE,
-        reason: CommonFailureReason.UNSUPPORTED_CHAIN,
+        details: {
+          reason: ErrorReason.UNSUPPORTED_CHAIN,
+          side: Side.OUTPUT,
+          commitment,
+          chainConfigs: this.chainConfigs,
+        },
       };
     }
 
@@ -59,7 +80,12 @@ export class Validator {
     if (signer.toLowerCase() !== commitment.solver.toLowerCase()) {
       return {
         status: Status.FAILURE,
-        reason: CommonFailureReason.INVALID_SIGNATURE,
+        details: {
+          reason: ErrorReason.UNSUPPORTED_CHAIN,
+          commitment,
+          signature,
+          chainConfigs: this.chainConfigs,
+        },
       };
     }
 
@@ -152,7 +178,16 @@ export class Validator {
     ) {
       return {
         status: Status.FAILURE,
-        reason: CommonFailureReason.INSUFFICIENT_OUTPUT_AMOUNT,
+        details: {
+          reason: ErrorReason.INSUFFICIENT_OUTPUT_PAYMENT_AMOUNT,
+          commitment,
+          chainConfigs: this.chainConfigs,
+          totalInputCommittedAmount: totalCommittedAmount.toString(),
+          totalInputActualAmount: totalActualAmount.toString(),
+          totalOutputCommittedAmount: outputAmount.committed.toString(),
+          totalOutputActualAmount: outputAmount.actual.toString(),
+          underpaymentBps: underpaymentBps.toString(),
+        },
       };
     }
 
