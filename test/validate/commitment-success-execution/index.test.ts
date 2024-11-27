@@ -27,6 +27,7 @@ describe("Validate commitment execution", () => {
       solver: solver.address,
       bond: "1000000000000000000",
       salt: "0",
+      deadline: Math.floor(Date.now() / 1000) + 3600,
       inputs: [
         {
           chain: "ethereum",

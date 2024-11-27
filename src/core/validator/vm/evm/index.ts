@@ -89,6 +89,8 @@ enum ErrorReason {
   COMMITMENT_ID_NOT_AT_END_OF_CALLDATA = "COMMITMENT_ID_NOT_AT_END_OF_CALLDATA",
   COULD_NOT_FIND_PAYMENT = "COULD_NOT_FIND_PAYMENT",
   MISSING_OUTPUT_CALLS = "MISSING_OUTPUT_CALLS",
+  MISSING_TRANSACTION_TIMESTAMP = "MISSING_TRANSACTION_TIMESTAMP",
+  DEADLINE_EXCEEDED = "DEADLINE_EXCEEDED",
 }
 
 export class EvmCommitmentValidator extends CommitmentValidator {
@@ -185,6 +187,39 @@ export class EvmCommitmentValidator extends CommitmentValidator {
         status: Status.FAILURE,
         details: {
           reason: ErrorReason.TRANSACTION_REVERTED,
+          side: Side.INPUT,
+          commitment,
+          inputIndex,
+          chainConfigs,
+          transactionId,
+        },
+      };
+    }
+
+    const txTimestamp = await rpc
+      .getBlock(txReceipt.blockNumber)
+      .then((block) => block?.timestamp);
+    if (!txTimestamp) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.MISSING_TRANSACTION_TIMESTAMP,
+          side: Side.INPUT,
+          commitment,
+          inputIndex,
+          chainConfigs,
+          transactionId,
+        },
+      };
+    }
+
+    // Checks:
+    // - the input payment was sent on time
+    if (txTimestamp > commitment.deadline) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.DEADLINE_EXCEEDED,
           side: Side.INPUT,
           commitment,
           inputIndex,

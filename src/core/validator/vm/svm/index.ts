@@ -9,11 +9,7 @@ import {
   Status,
   ValidationResult,
 } from "../../types";
-import {
-  COMMITMENT_ID_LENGTH_IN_BYTES,
-  ChainVmType,
-  Commitment,
-} from "../../../commitment";
+import { ChainVmType, Commitment } from "../../../commitment";
 
 const NATIVE_CURRENCY = "11111111111111111111111111111111";
 
@@ -28,6 +24,8 @@ enum ErrorReason {
   WRONG_MEMO_INSTRUCTION = "WRONG_MEMO_INSTRUCTION",
   NATIVE_PAYMENT_MISMATCH = "NATIVE_PAYMENT_MISMATCH",
   SPL_TOKEN_PAYMENT_MISMATCH = "SPL_TOKEN_PAYMENT_MISMATCH",
+  MISSING_TRANSACTION_TIMESTAMP = "MISSING_TRANSACTION_TIMESTAMP",
+  DEADLINE_EXCEEDED = "DEADLINE_EXCEEDED",
 }
 
 export class SvmCommitmentValidator extends CommitmentValidator {
@@ -112,6 +110,37 @@ export class SvmCommitmentValidator extends CommitmentValidator {
         status: Status.FAILURE,
         details: {
           reason: ErrorReason.TRANSACTION_REVERTED,
+          side: Side.INPUT,
+          commitment,
+          inputIndex,
+          chainConfigs,
+          transactionId,
+        },
+      };
+    }
+
+    const txTimestamp = tx.blockTime;
+    if (!txTimestamp) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.MISSING_TRANSACTION_TIMESTAMP,
+          side: Side.INPUT,
+          commitment,
+          inputIndex,
+          chainConfigs,
+          transactionId,
+        },
+      };
+    }
+
+    // Checks:
+    // - the input payment was sent on time
+    if (txTimestamp > commitment.deadline) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.DEADLINE_EXCEEDED,
           side: Side.INPUT,
           commitment,
           inputIndex,

@@ -167,6 +167,9 @@ class AnnotatedCommitment {
   @field({ type: "u256" })
   salt: bigint;
 
+  @field({ type: "u32" })
+  deadline: number;
+
   @field({ type: vec(AnnotatedInput) })
   inputs: AnnotatedInput[];
 
@@ -178,6 +181,7 @@ class AnnotatedCommitment {
     bond: bigint,
     solver: string,
     salt: bigint,
+    deadline: number,
     inputs: AnnotatedInput[],
     output: AnnotatedOutput
   ) {
@@ -185,6 +189,7 @@ class AnnotatedCommitment {
     this.bond = bond;
     this.solver = solver;
     this.salt = salt;
+    this.deadline = deadline;
     this.inputs = inputs;
     this.output = output;
   }
@@ -195,6 +200,7 @@ class AnnotatedCommitment {
       BigInt(data.bond),
       data.solver,
       BigInt(data.salt),
+      data.deadline,
       data.inputs.map(
         (input) =>
           new AnnotatedInput(
@@ -255,6 +261,9 @@ export type Commitment = {
 
   // Random salt value to ensure commitment uniqueness
   salt: string;
+
+  // Deadline for making all input payments
+  deadline: number;
 
   // A commitment can have multiple inputs, each specifying:
   // - the chain of the input payment
