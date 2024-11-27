@@ -218,6 +218,10 @@ export class EvmCommitmentValidator extends CommitmentValidator {
           inputIndex,
           chainConfigs,
           transactionId,
+          checks: {
+            currency: input.payment.currency.toLowerCase() === NATIVE_CURRENCY,
+            commitmentId: commitment.id === tx.data,
+          },
         },
       };
     }
@@ -246,7 +250,24 @@ export class EvmCommitmentValidator extends CommitmentValidator {
             };
           }
 
-          break;
+          return {
+            status: Status.FAILURE,
+            details: {
+              reason: ErrorReason.DIRECT_ERC20_PAYMENT_MISMATCH,
+              side: Side.INPUT,
+              commitment,
+              inputIndex,
+              chainConfigs,
+              transactionId,
+              checks: {
+                currency:
+                  input.payment.to.toLowerCase() === recipient.toLowerCase(),
+                commitmentId:
+                  commitment.id ===
+                  "0x" + tx.data.slice(-COMMITMENT_ID_LENGTH_IN_BYTES * 2),
+              },
+            },
+          };
         }
       }
 
@@ -259,6 +280,9 @@ export class EvmCommitmentValidator extends CommitmentValidator {
           inputIndex,
           chainConfigs,
           transactionId,
+          checks: {
+            standardTransferMethod: false,
+          },
         },
       };
     }
