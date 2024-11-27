@@ -1,7 +1,9 @@
 import { getBytes, verifyMessage } from "ethers";
 
-import { ChainConfig, Side, Status } from "./types";
 import { EvmCommitmentValidator } from "./vm/evm";
+import { SvmCommitmentValidator } from "./vm/svm";
+
+import { ChainConfig, Side, Status } from "./types";
 import { ChainVmType, Commitment, getCommitmentId } from "../commitment";
 
 const BPS_UNIT = 1000000000000000000n;
@@ -200,7 +202,7 @@ export class Validator {
         return new EvmCommitmentValidator();
 
       case ChainVmType.SVM:
-        throw new Error("SVM commitment validator not implemented");
+        throw new SvmCommitmentValidator();
 
       case ChainVmType.BVM:
         throw new Error("BVM commitment validator not implemented");
