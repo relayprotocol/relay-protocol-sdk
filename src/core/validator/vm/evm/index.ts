@@ -550,7 +550,9 @@ export class EvmCommitmentValidator extends CommitmentValidator {
             continue;
           }
         }
+      }
 
+      if (processedTxCallIndexes.length !== outputCalls.length) {
         return {
           status: Status.FAILURE,
           details: {
