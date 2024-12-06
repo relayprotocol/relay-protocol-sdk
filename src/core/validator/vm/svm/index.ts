@@ -15,6 +15,7 @@ const NATIVE_CURRENCY = "11111111111111111111111111111111";
 
 enum ErrorReason {
   INPUT_DOES_NOT_EXIST = "INPUT_DOES_NOT_EXIST",
+  REFUND_DOES_NOT_EXIST = "REFUND_DOES_NOT_EXIST",
   UNSUPPORTED_CHAIN = "UNSUPPORTED_CHAIN",
   WRONG_CHAIN_VM_TYPE = "WRONG_CHAIN_VM_TYPE",
   MISSING_TRANSACTION = "MISSING_TRANSACTION",
@@ -331,11 +332,9 @@ export class SvmCommitmentValidator extends CommitmentValidator {
     const rpc = new Connection(chainData.rpcUrl, { commitment: "confirmed" });
 
     // Ensure we can retrieve the transaction
-    const tx = await rpc
-      .getTransaction(transactionId, {
-        maxSupportedTransactionVersion: 0,
-      })
-      .catch(() => undefined);
+    const tx = await rpc.getTransaction(transactionId, {
+      maxSupportedTransactionVersion: 0,
+    });
     if (!tx) {
       return {
         status: Status.FAILURE,
@@ -497,6 +496,266 @@ export class SvmCommitmentValidator extends CommitmentValidator {
           reason: ErrorReason.SPL_TOKEN_PAYMENT_MISMATCH,
           side: Side.OUTPUT,
           commitment,
+          chainConfigs,
+          transactionId,
+        },
+      };
+    }
+  }
+
+  public async validateRefund({
+    chainConfigs,
+    commitment,
+    inputIndex,
+    refundIndex,
+    transactionId,
+  }: {
+    chainConfigs: Record<string, ChainConfig>;
+    commitment: Commitment;
+    inputIndex: number;
+    refundIndex: number;
+    transactionId: string;
+  }): Promise<ValidationResult> {
+    // Ensure the input exists
+    const input = commitment.inputs[inputIndex];
+    if (!input) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.INPUT_DOES_NOT_EXIST,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+        },
+      };
+    }
+
+    // Ensure the refund exists
+    const refund = input.refunds[refundIndex];
+    if (!refund) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.REFUND_DOES_NOT_EXIST,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+        },
+      };
+    }
+
+    // Ensure the chain exists and has the right vm type
+    const chainData = chainConfigs[refund.chain];
+    if (!chainData) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.UNSUPPORTED_CHAIN,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+        },
+      };
+    }
+    if (chainData.vmType !== ChainVmType.SVM) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.WRONG_CHAIN_VM_TYPE,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+        },
+      };
+    }
+
+    const rpc = new Connection(chainData.rpcUrl, { commitment: "confirmed" });
+
+    // Ensure we can retrieve the transaction
+    const tx = await rpc.getTransaction(transactionId, {
+      maxSupportedTransactionVersion: 0,
+    });
+    if (!tx) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.MISSING_TRANSACTION,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+          transactionId,
+        },
+      };
+    }
+
+    // Ensure the transaction is not reverted
+    if (tx.meta?.err) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.TRANSACTION_REVERTED,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+          transactionId,
+        },
+      };
+    }
+
+    // Get all relevant account keys
+    const accountKeys = [
+      ...tx.transaction.message.getAccountKeys({
+        addressLookupTableAccounts: await Promise.all(
+          (tx.transaction.message.addressTableLookups ?? []).map(
+            async ({ accountKey }) =>
+              await rpc
+                .getAddressLookupTable(accountKey)
+                .then((res) => res.value!)
+          )
+        ),
+      }).staticAccountKeys,
+      // First we have `writable` and then `readonly`
+      ...(tx.meta?.loadedAddresses?.writable ?? []),
+      ...(tx.meta?.loadedAddresses?.readonly ?? []),
+    ];
+
+    // Get all relevant instructions
+    const message = tx.transaction.message;
+    const instructions = [
+      ...message.compiledInstructions,
+      // Include any inner instructions
+      ...(tx.meta?.innerInstructions ?? [])
+        .map((i) => i.instructions)
+        .flat()
+        .map((i) => ({
+          accountKeyIndexes: i.accounts,
+          programIdIndex: i.programIdIndex,
+          data: bs58.decode(i.data),
+        })),
+    ];
+
+    // Checks:
+    // - there should be a single memo instruction matching the commitment id
+
+    const memoInstructions = instructions.filter(
+      (i) => accountKeys[i.programIdIndex] === MEMO_PROGRAM_ID
+    );
+    if (!memoInstructions.length) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.NO_MEMO_INSTRUCTION_DETECTED,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+          transactionId,
+        },
+      };
+    }
+    if (memoInstructions.length > 1) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.MULTIPLE_MEMO_INSTRUCTIONS_DETECTED,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+          transactionId,
+        },
+      };
+    }
+    if (Buffer.from(memoInstructions[0].data).toString() !== commitment.id) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.WRONG_MEMO_INSTRUCTION,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+          transactionId,
+        },
+      };
+    }
+
+    if (refund.currency === NATIVE_CURRENCY) {
+      // Case 1: native payment
+
+      const toIndex = accountKeys.findIndex(
+        (key) => key.toBase58() === refund.to
+      );
+      if (toIndex) {
+        const preBalance = tx.meta?.preBalances[toIndex];
+        const postBalance = tx.meta?.postBalances[toIndex];
+        if (preBalance && postBalance) {
+          const amount = BigInt(postBalance) - BigInt(preBalance);
+          if (amount > 0n) {
+            return {
+              status: Status.SUCCESS,
+              amount,
+            };
+          }
+        }
+      }
+
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.NATIVE_PAYMENT_MISMATCH,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+          transactionId,
+        },
+      };
+    } else {
+      // Case 2: spl-token payment
+
+      const preBalance = tx.meta?.preTokenBalances?.find(
+        (b) => b.mint === refund.currency && b.owner === refund.to
+      );
+      const postBalance = tx.meta?.postTokenBalances?.find(
+        (b) => b.mint === refund.currency && b.owner === refund.to
+      );
+      if (preBalance && postBalance) {
+        const amount =
+          BigInt(postBalance.uiTokenAmount.amount) -
+          BigInt(preBalance.uiTokenAmount.amount);
+        if (amount > 0n) {
+          return {
+            status: Status.SUCCESS,
+            amount,
+          };
+        }
+      }
+
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.SPL_TOKEN_PAYMENT_MISMATCH,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
           chainConfigs,
           transactionId,
         },

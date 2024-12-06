@@ -78,6 +78,7 @@ const extractAllCalls = (trace: CallTrace): CallEvm[] => {
 
 enum ErrorReason {
   INPUT_DOES_NOT_EXIST = "INPUT_DOES_NOT_EXIST",
+  REFUND_DOES_NOT_EXIST = "REFUND_DOES_NOT_EXIST",
   UNSUPPORTED_CHAIN = "UNSUPPORTED_CHAIN",
   WRONG_CHAIN_VM_TYPE = "WRONG_CHAIN_VM_TYPE",
   MISSING_TRANSACTION_RESPONSE = "MISSING_TRANSACTION_RESPONSE",
@@ -564,6 +565,223 @@ export class EvmCommitmentValidator extends CommitmentValidator {
           },
         };
       }
+    }
+
+    return {
+      status: Status.SUCCESS,
+      amount,
+    };
+  }
+
+  public async validateRefund({
+    chainConfigs,
+    commitment,
+    inputIndex,
+    refundIndex,
+    transactionId,
+  }: {
+    chainConfigs: Record<string, ChainConfig>;
+    commitment: Commitment;
+    inputIndex: number;
+    refundIndex: number;
+    transactionId: string;
+  }): Promise<ValidationResult> {
+    // Ensure the input exists
+    const input = commitment.inputs[inputIndex];
+    if (!input) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.INPUT_DOES_NOT_EXIST,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+        },
+      };
+    }
+
+    // Ensure the refund exists
+    const refund = input.refunds[refundIndex];
+    if (!refund) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.REFUND_DOES_NOT_EXIST,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+        },
+      };
+    }
+
+    // Ensure the chain exists and has the right vm type
+    const chainData = chainConfigs[refund.chain];
+    if (!chainData) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.UNSUPPORTED_CHAIN,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+        },
+      };
+    }
+    if (chainData.vmType !== ChainVmType.EVM) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.WRONG_CHAIN_VM_TYPE,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+        },
+      };
+    }
+
+    const rpc = new JsonRpcProvider(chainData.rpcUrl);
+
+    // Ensure we can retrieve the transaction response
+    const tx = await rpc.getTransaction(transactionId);
+    if (!tx) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.MISSING_TRANSACTION_RESPONSE,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+          transactionId,
+        },
+      };
+    }
+
+    // Ensure we can retrieve the transaction receipt
+    const txReceipt = await rpc.getTransactionReceipt(transactionId);
+    if (!txReceipt) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.MISSING_TRANSACTION_RECEIPT,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+          transactionId,
+        },
+      };
+    }
+
+    // Ensure the transaction is not reverted
+    if (txReceipt.status !== 1) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.TRANSACTION_REVERTED,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+          transactionId,
+        },
+      };
+    }
+
+    // Checks:
+    // - the commitment id must be at the end of the transaction data
+    if (
+      commitment.id !==
+      "0x" + tx.data.slice(-COMMITMENT_ID_LENGTH_IN_BYTES * 2)
+    ) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.COMMITMENT_ID_NOT_AT_END_OF_CALLDATA,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+          transactionId,
+        },
+      };
+    }
+
+    // Utility to avoid making more than one tracing call
+    let txCalls: CallEvm[] | undefined;
+    const getCallsWithCache = async () => {
+      if (!txCalls) {
+        const trace = await getTrace(rpc, transactionId);
+        txCalls = extractAllCalls(trace);
+      }
+      return txCalls;
+    };
+
+    // Parse the payment amount
+    let amount: bigint | undefined;
+    if (refund.currency.toLowerCase() === NATIVE_CURRENCY) {
+      // Case 1: native currency
+
+      if (tx.to?.toLowerCase() === refund.to.toLowerCase()) {
+        // Case 1: direct payment
+
+        amount = tx.value;
+      } else {
+        // Case 2: internal payment
+
+        const calls = await getCallsWithCache();
+        for (let i = 0; i < calls.length; i++) {
+          const call = calls[i];
+          if (call.to.toLowerCase() === refund.to.toLowerCase()) {
+            amount = BigInt(call.value);
+
+            break;
+          }
+        }
+      }
+    } else {
+      // Case 2: erc20 payment
+
+      for (const log of getTransferLogs(txReceipt.logs)) {
+        const decoded = iface.parseLog(log);
+
+        if (
+          decoded &&
+          log.address.toLowerCase() === refund.currency.toLowerCase() &&
+          decoded.args.to.toLowerCase() === refund.to.toLowerCase()
+        ) {
+          amount = decoded.args.value.toString();
+        }
+      }
+    }
+
+    // Checks:
+    // - the output payment was successfully sent
+    if (!amount) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.COULD_NOT_FIND_PAYMENT,
+          side: Side.REFUND,
+          commitment,
+          inputIndex,
+          refundIndex,
+          chainConfigs,
+          transactionId,
+        },
+      };
     }
 
     return {

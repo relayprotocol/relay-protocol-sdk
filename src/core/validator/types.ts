@@ -13,6 +13,7 @@ export enum Status {
 export enum Side {
   INPUT = "INPUT",
   OUTPUT = "OUTPUT",
+  REFUND = "REFUND",
 }
 
 export type ValidationResult =
@@ -30,6 +31,14 @@ export abstract class CommitmentValidator {
   public abstract validateOutput(data: {
     chainConfigs: Record<string, ChainConfig>;
     commitment: Commitment;
+    transactionId: string;
+  }): Promise<ValidationResult>;
+
+  public abstract validateRefund(data: {
+    chainConfigs: Record<string, ChainConfig>;
+    commitment: Commitment;
+    inputIndex: number;
+    refundIndex: number;
     transactionId: string;
   }): Promise<ValidationResult>;
 }
