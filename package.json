@@ -1,6 +1,6 @@
 {
   "name": "@reservoir0x/relay-verifier-sdk",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Relay protocol verifier SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

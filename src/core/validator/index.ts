@@ -202,7 +202,7 @@ export class Validator {
         return new EvmCommitmentValidator();
 
       case ChainVmType.SVM:
-        throw new SvmCommitmentValidator();
+        return new SvmCommitmentValidator();
 
       case ChainVmType.BVM:
         throw new Error("BVM commitment validator not implemented");
