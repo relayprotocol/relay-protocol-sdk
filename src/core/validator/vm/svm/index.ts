@@ -85,11 +85,9 @@ export class SvmCommitmentValidator extends CommitmentValidator {
     const rpc = new Connection(chainData.rpcUrl, { commitment: "confirmed" });
 
     // Ensure we can retrieve the transaction
-    const tx = await rpc
-      .getTransaction(transactionId, {
-        maxSupportedTransactionVersion: 0,
-      })
-      .catch(() => undefined);
+    const tx = await rpc.getTransaction(transactionId, {
+      maxSupportedTransactionVersion: 0,
+    });
     if (!tx) {
       return {
         status: Status.FAILURE,
