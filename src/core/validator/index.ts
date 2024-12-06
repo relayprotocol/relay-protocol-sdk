@@ -13,8 +13,10 @@ type Result = { status: Status } | { status: Status; details: any };
 enum ErrorReason {
   UNSUPPORTED_CHAIN = "UNSUPPORTED_CHAIN",
   MISSING_REFUND_OPTIONS = "MISSING_REFUND_OPTIONS",
+  MISSING_REFUND_EXECUTION = "MISSING_REFUND_EXECUTION",
   INVALID_SIGNATURE = "INVALID_SIGNATURE",
   INSUFFICIENT_OUTPUT_PAYMENT_AMOUNT = "INSUFFICIENT_OUTPUT_PAYMENT_AMOUNT",
+  INSUFFICIENT_REFUND_PAYMENT_AMOUNT = "INSUFFICIENT_REFUND_PAYMENT_AMOUNT",
 }
 
 export class Validator {
@@ -94,7 +96,7 @@ export class Validator {
     return { status: Status.SUCCESS };
   }
 
-  public async validateCommitmentSuccessExecution(
+  public async validateCommitmentOutputExecution(
     commitment: Commitment,
     inputExecutions: {
       inputIndex: number;
@@ -191,6 +193,104 @@ export class Validator {
           underpaymentBps: underpaymentBps.toString(),
         },
       };
+    }
+
+    return { status: Status.SUCCESS };
+  }
+
+  public async validateCommitmentRefundExecution(
+    commitment: Commitment,
+    inputExecutions: {
+      inputIndex: number;
+      transactionId: string;
+    }[],
+    refundExecutions: {
+      inputIndex: number;
+      refundIndex: number;
+      transactionId: string;
+    }[]
+  ): Promise<Result> {
+    // Validate the inputs and refunds
+    for (const { inputIndex, transactionId } of inputExecutions) {
+      const input = commitment.inputs[inputIndex];
+
+      const refund = refundExecutions.find((e) => e.inputIndex === inputIndex);
+      if (!refund) {
+        return {
+          status: Status.FAILURE,
+          details: {
+            reason: ErrorReason.MISSING_REFUND_EXECUTION,
+            commitment,
+            inputIndex,
+            chainConfigs: this.chainConfigs,
+          },
+        };
+      }
+
+      // Validate input
+      const inputValidationResult = await this.getCommitmentValidator(
+        this.chainConfigs[input.chain].vmType
+      ).validateInput({
+        chainConfigs: this.chainConfigs,
+        commitment,
+        inputIndex,
+        transactionId,
+      });
+      if (inputValidationResult.status !== Status.SUCCESS) {
+        return inputValidationResult;
+      }
+
+      // Validate refund
+      const refundValidationResult = await this.getCommitmentValidator(
+        this.chainConfigs[input.chain].vmType
+      ).validateRefund({
+        chainConfigs: this.chainConfigs,
+        commitment,
+        inputIndex: refund.inputIndex,
+        refundIndex: refund.refundIndex,
+        transactionId: refund.transactionId,
+      });
+      if (refundValidationResult.status !== Status.SUCCESS) {
+        return refundValidationResult;
+      }
+
+      // Get the total weighted committed and actual amounts
+      const committedAmount =
+        BigInt(input.payment.amount) * BigInt(input.payment.weight);
+      const actualAmount =
+        inputValidationResult.amount * BigInt(input.payment.weight);
+
+      let underpaymentBps = 0n;
+      if (actualAmount < committedAmount) {
+        underpaymentBps =
+          ((committedAmount - actualAmount) * BPS_UNIT) / committedAmount;
+      }
+
+      if (
+        refundValidationResult.amount <
+        (BigInt(
+          commitment.inputs[refund.inputIndex].refunds[refund.refundIndex]
+            .minimumAmount
+        ) *
+          (BPS_UNIT - underpaymentBps)) /
+          BPS_UNIT
+      ) {
+        return {
+          status: Status.FAILURE,
+          details: {
+            reason: ErrorReason.INSUFFICIENT_REFUND_PAYMENT_AMOUNT,
+            commitment,
+            chainConfigs: this.chainConfigs,
+            inputCommittedAmount: committedAmount.toString(),
+            inputActualAmount: actualAmount.toString(),
+            refundCommittedAmount:
+              commitment.inputs[refund.inputIndex].refunds[refund.refundIndex]
+                .minimumAmount,
+            refundActualAmount: refundValidationResult.amount.toString(),
+            underpaymentBps: underpaymentBps.toString(),
+          },
+        };
+      }
     }
 
     return { status: Status.SUCCESS };
