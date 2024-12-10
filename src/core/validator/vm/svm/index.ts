@@ -185,7 +185,8 @@ export class SvmCommitmentValidator extends CommitmentValidator {
     // - there should be a single memo instruction matching the commitment id
 
     const memoInstructions = instructions.filter(
-      (i) => accountKeys[i.programIdIndex] === MEMO_PROGRAM_ID
+      (i) =>
+        accountKeys[i.programIdIndex].toBase58() === MEMO_PROGRAM_ID.toBase58()
     );
     if (!memoInstructions.length) {
       return {
@@ -236,7 +237,7 @@ export class SvmCommitmentValidator extends CommitmentValidator {
       if (toIndex) {
         const preBalance = tx.meta?.preBalances[toIndex];
         const postBalance = tx.meta?.postBalances[toIndex];
-        if (preBalance && postBalance) {
+        if (preBalance !== undefined && postBalance !== undefined) {
           const amount = BigInt(postBalance) - BigInt(preBalance);
           if (amount > 0n) {
             return {
@@ -267,7 +268,7 @@ export class SvmCommitmentValidator extends CommitmentValidator {
       const postBalance = tx.meta?.postTokenBalances?.find(
         (b) => b.mint === input.payment.currency && b.owner === input.payment.to
       );
-      if (preBalance && postBalance) {
+      if (preBalance !== undefined && postBalance !== undefined) {
         const amount =
           BigInt(postBalance.uiTokenAmount.amount) -
           BigInt(preBalance.uiTokenAmount.amount);
@@ -398,7 +399,8 @@ export class SvmCommitmentValidator extends CommitmentValidator {
     // - there should be a single memo instruction matching the commitment id
 
     const memoInstructions = instructions.filter(
-      (i) => accountKeys[i.programIdIndex] === MEMO_PROGRAM_ID
+      (i) =>
+        accountKeys[i.programIdIndex].toBase58() === MEMO_PROGRAM_ID.toBase58()
     );
     if (!memoInstructions.length) {
       return {
@@ -446,7 +448,7 @@ export class SvmCommitmentValidator extends CommitmentValidator {
       if (toIndex) {
         const preBalance = tx.meta?.preBalances[toIndex];
         const postBalance = tx.meta?.postBalances[toIndex];
-        if (preBalance && postBalance) {
+        if (preBalance !== undefined && postBalance !== undefined) {
           const amount = BigInt(postBalance) - BigInt(preBalance);
           if (amount > 0n) {
             return {
@@ -478,7 +480,7 @@ export class SvmCommitmentValidator extends CommitmentValidator {
         (b) =>
           b.mint === output.payment.currency && b.owner === output.payment.to
       );
-      if (preBalance && postBalance) {
+      if (preBalance !== undefined && postBalance !== undefined) {
         const amount =
           BigInt(postBalance.uiTokenAmount.amount) -
           BigInt(preBalance.uiTokenAmount.amount);
@@ -650,7 +652,8 @@ export class SvmCommitmentValidator extends CommitmentValidator {
     // - there should be a single memo instruction matching the commitment id
 
     const memoInstructions = instructions.filter(
-      (i) => accountKeys[i.programIdIndex] === MEMO_PROGRAM_ID
+      (i) =>
+        accountKeys[i.programIdIndex].toBase58() === MEMO_PROGRAM_ID.toBase58()
     );
     if (!memoInstructions.length) {
       return {
@@ -704,7 +707,7 @@ export class SvmCommitmentValidator extends CommitmentValidator {
       if (toIndex) {
         const preBalance = tx.meta?.preBalances[toIndex];
         const postBalance = tx.meta?.postBalances[toIndex];
-        if (preBalance && postBalance) {
+        if (preBalance !== undefined && postBalance !== undefined) {
           const amount = BigInt(postBalance) - BigInt(preBalance);
           if (amount > 0n) {
             return {
@@ -736,7 +739,7 @@ export class SvmCommitmentValidator extends CommitmentValidator {
       const postBalance = tx.meta?.postTokenBalances?.find(
         (b) => b.mint === refund.currency && b.owner === refund.to
       );
-      if (preBalance && postBalance) {
+      if (preBalance !== undefined && postBalance !== undefined) {
         const amount =
           BigInt(postBalance.uiTokenAmount.amount) -
           BigInt(preBalance.uiTokenAmount.amount);
