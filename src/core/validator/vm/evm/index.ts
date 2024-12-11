@@ -545,7 +545,7 @@ export class EvmCommitmentValidator extends CommitmentValidator {
             txCall.from.toLowerCase() === outputCall.from.toLowerCase() &&
             txCall.to.toLowerCase() === outputCall.to.toLowerCase() &&
             txCall.data === outputCall.data &&
-            txCall.value === outputCall.value
+            BigInt(txCall.value) === BigInt(outputCall.value)
           ) {
             processedTxCallIndexes.push(i);
             continue;
