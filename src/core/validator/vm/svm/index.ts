@@ -263,10 +263,14 @@ export class SvmCommitmentValidator extends CommitmentValidator {
       // Case 2: spl-token payment
 
       const preBalance = tx.meta?.preTokenBalances?.find(
-        (b) => b.mint === input.payment.currency && b.owner === input.payment.to
+        (b) =>
+          b.mint === input.payment.currency &&
+          accountKeys[b.accountIndex].toBase58() === input.payment.to
       );
       const postBalance = tx.meta?.postTokenBalances?.find(
-        (b) => b.mint === input.payment.currency && b.owner === input.payment.to
+        (b) =>
+          b.mint === input.payment.currency &&
+          accountKeys[b.accountIndex].toBase58() === input.payment.to
       );
       if (preBalance !== undefined && postBalance !== undefined) {
         const amount =
@@ -474,11 +478,13 @@ export class SvmCommitmentValidator extends CommitmentValidator {
 
       const preBalance = tx.meta?.preTokenBalances?.find(
         (b) =>
-          b.mint === output.payment.currency && b.owner === output.payment.to
+          b.mint === output.payment.currency &&
+          accountKeys[b.accountIndex].toBase58() === output.payment.to
       );
       const postBalance = tx.meta?.postTokenBalances?.find(
         (b) =>
-          b.mint === output.payment.currency && b.owner === output.payment.to
+          b.mint === output.payment.currency &&
+          accountKeys[b.accountIndex].toBase58() === output.payment.to
       );
       if (preBalance !== undefined && postBalance !== undefined) {
         const amount =
@@ -734,10 +740,14 @@ export class SvmCommitmentValidator extends CommitmentValidator {
       // Case 2: spl-token payment
 
       const preBalance = tx.meta?.preTokenBalances?.find(
-        (b) => b.mint === refund.currency && b.owner === refund.to
+        (b) =>
+          b.mint === refund.currency &&
+          accountKeys[b.accountIndex].toBase58() === refund.to
       );
       const postBalance = tx.meta?.postTokenBalances?.find(
-        (b) => b.mint === refund.currency && b.owner === refund.to
+        (b) =>
+          b.mint === refund.currency &&
+          accountKeys[b.accountIndex].toBase58() === refund.to
       );
       if (preBalance !== undefined && postBalance !== undefined) {
         const amount =
