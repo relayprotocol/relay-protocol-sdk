@@ -237,8 +237,8 @@ export class SvmCommitmentValidator extends CommitmentValidator {
       if (toIndex) {
         const preBalance = tx.meta?.preBalances[toIndex];
         const postBalance = tx.meta?.postBalances[toIndex];
-        if (preBalance !== undefined && postBalance !== undefined) {
-          const amount = BigInt(postBalance) - BigInt(preBalance);
+        if (postBalance !== undefined) {
+          const amount = BigInt(postBalance) - BigInt(preBalance ?? 0);
           if (amount > 0n) {
             return {
               status: Status.SUCCESS,
@@ -272,10 +272,10 @@ export class SvmCommitmentValidator extends CommitmentValidator {
           b.mint === input.payment.currency &&
           accountKeys[b.accountIndex].toBase58() === input.payment.to
       );
-      if (preBalance !== undefined && postBalance !== undefined) {
+      if (postBalance !== undefined) {
         const amount =
           BigInt(postBalance.uiTokenAmount.amount) -
-          BigInt(preBalance.uiTokenAmount.amount);
+          BigInt(preBalance?.uiTokenAmount.amount ?? 0);
         if (amount > 0n) {
           return {
             status: Status.SUCCESS,
@@ -452,8 +452,8 @@ export class SvmCommitmentValidator extends CommitmentValidator {
       if (toIndex) {
         const preBalance = tx.meta?.preBalances[toIndex];
         const postBalance = tx.meta?.postBalances[toIndex];
-        if (preBalance !== undefined && postBalance !== undefined) {
-          const amount = BigInt(postBalance) - BigInt(preBalance);
+        if (postBalance !== undefined) {
+          const amount = BigInt(postBalance) - BigInt(preBalance ?? 0);
           if (amount > 0n) {
             return {
               status: Status.SUCCESS,
@@ -486,10 +486,10 @@ export class SvmCommitmentValidator extends CommitmentValidator {
           b.mint === output.payment.currency &&
           accountKeys[b.accountIndex].toBase58() === output.payment.to
       );
-      if (preBalance !== undefined && postBalance !== undefined) {
+      if (postBalance !== undefined) {
         const amount =
           BigInt(postBalance.uiTokenAmount.amount) -
-          BigInt(preBalance.uiTokenAmount.amount);
+          BigInt(preBalance?.uiTokenAmount.amount ?? 0);
         if (amount > 0n) {
           return {
             status: Status.SUCCESS,
@@ -713,8 +713,8 @@ export class SvmCommitmentValidator extends CommitmentValidator {
       if (toIndex) {
         const preBalance = tx.meta?.preBalances[toIndex];
         const postBalance = tx.meta?.postBalances[toIndex];
-        if (preBalance !== undefined && postBalance !== undefined) {
-          const amount = BigInt(postBalance) - BigInt(preBalance);
+        if (postBalance !== undefined) {
+          const amount = BigInt(postBalance) - BigInt(preBalance ?? 0);
           if (amount > 0n) {
             return {
               status: Status.SUCCESS,
@@ -749,10 +749,10 @@ export class SvmCommitmentValidator extends CommitmentValidator {
           b.mint === refund.currency &&
           accountKeys[b.accountIndex].toBase58() === refund.to
       );
-      if (preBalance !== undefined && postBalance !== undefined) {
+      if (postBalance !== undefined) {
         const amount =
           BigInt(postBalance.uiTokenAmount.amount) -
-          BigInt(preBalance.uiTokenAmount.amount);
+          BigInt(preBalance?.uiTokenAmount.amount ?? 0);
         if (amount > 0n) {
           return {
             status: Status.SUCCESS,
