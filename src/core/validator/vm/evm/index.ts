@@ -544,15 +544,15 @@ export class EvmCommitmentValidator extends CommitmentValidator {
         const lastProcessedTxCallIndex = processedTxCallIndexes.length
           ? processedTxCallIndexes[processedTxCallIndexes.length - 1]
           : -1;
-        for (let i = lastProcessedTxCallIndex + 1; i < txCalls.length; i++) {
-          const txCall = txCalls[i];
+        for (let j = lastProcessedTxCallIndex + 1; j < txCalls.length; j++) {
+          const txCall = txCalls[j];
           if (
             txCall.from.toLowerCase() === outputCall.from.toLowerCase() &&
             txCall.to.toLowerCase() === outputCall.to.toLowerCase() &&
             txCall.data === outputCall.data &&
             BigInt(txCall.value) === BigInt(outputCall.value)
           ) {
-            processedTxCallIndexes.push(i);
+            processedTxCallIndexes.push(j);
 
             // This was the last output call
             if (i === outputCalls.length - 1) {
