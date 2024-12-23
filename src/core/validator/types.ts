@@ -3,6 +3,7 @@ import { ChainVmType, Commitment } from "../commitment";
 export type ChainConfig = {
   vmType: ChainVmType;
   rpcUrl: string;
+  rpcTimeoutInMs?: number;
 };
 
 export enum Status {

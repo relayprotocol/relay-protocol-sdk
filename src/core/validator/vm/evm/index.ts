@@ -37,6 +37,17 @@ const iface = new Interface([
 const TRANSFER_TOPIC = iface.getEvent("Transfer")!.topicHash;
 const RELAY_DEPOSIT_TOPIC = iface.getEvent("RelayDeposit")!.topicHash;
 
+const getRpc = (chainData: ChainConfig) => {
+  const rpc = new JsonRpcProvider(chainData.rpcUrl, undefined, {
+    staticNetwork: true,
+  });
+  if (chainData.rpcTimeoutInMs) {
+    rpc._getConnection().timeout = chainData.rpcTimeoutInMs;
+  }
+
+  return rpc;
+};
+
 const getTransferLogs = (logs: readonly Log[]) =>
   logs.filter((log) => log.topics[0] === TRANSFER_TOPIC);
 
@@ -148,7 +159,7 @@ export class EvmCommitmentValidator extends CommitmentValidator {
       };
     }
 
-    const rpc = new JsonRpcProvider(chainData.rpcUrl);
+    const rpc = getRpc(chainData);
 
     // Ensure we can retrieve the transaction response
     const tx = await rpc.getTransaction(transactionId);
@@ -396,7 +407,7 @@ export class EvmCommitmentValidator extends CommitmentValidator {
       };
     }
 
-    const rpc = new JsonRpcProvider(chainData.rpcUrl);
+    const rpc = getRpc(chainData);
 
     // Ensure we can retrieve the transaction response
     const tx = await rpc.getTransaction(transactionId);
@@ -647,7 +658,7 @@ export class EvmCommitmentValidator extends CommitmentValidator {
       };
     }
 
-    const rpc = new JsonRpcProvider(chainData.rpcUrl);
+    const rpc = getRpc(chainData);
 
     // Ensure we can retrieve the transaction response
     const tx = await rpc.getTransaction(transactionId);
