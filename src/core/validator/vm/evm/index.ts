@@ -1,5 +1,6 @@
-import { FetchRequest, Interface, JsonRpcProvider, Log } from "ethers";
+import { Interface, Log } from "ethers";
 
+import { getRpc } from "./rpc";
 import { CallTrace, getTrace } from "./trace";
 import {
   ChainConfig,
@@ -36,22 +37,6 @@ const iface = new Interface([
 
 const TRANSFER_TOPIC = iface.getEvent("Transfer")!.topicHash;
 const RELAY_DEPOSIT_TOPIC = iface.getEvent("RelayDeposit")!.topicHash;
-
-const getRpc = (chainData: ChainConfig) => {
-  const fetchRequest = new FetchRequest(chainData.rpcUrl);
-
-  // No retries
-  fetchRequest.setThrottleParams({
-    maxAttempts: 1,
-  });
-
-  // Add timeout
-  if (chainData.rpcTimeoutInMs) {
-    fetchRequest.timeout = chainData.rpcTimeoutInMs;
-  }
-
-  return new JsonRpcProvider(fetchRequest, undefined, { staticNetwork: true });
-};
 
 const getTransferLogs = (logs: readonly Log[]) =>
   logs.filter((log) => log.topics[0] === TRANSFER_TOPIC);
