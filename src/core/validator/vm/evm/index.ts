@@ -534,7 +534,11 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     // - ensure all output calls were executed in the correct order
     const outputCalls = output.calls;
     if (outputCalls.length) {
-      for (const outputCall of outputCalls) {
+      let allOutputCallsExecuted = false;
+
+      for (let i = 0; i < outputCalls.length; i++) {
+        const outputCall = outputCalls[i];
+
         const txCalls = await getCallsWithCache();
 
         const lastProcessedTxCallIndex = processedTxCallIndexes.length
@@ -549,12 +553,18 @@ export class EvmCommitmentValidator extends CommitmentValidator {
             BigInt(txCall.value) === BigInt(outputCall.value)
           ) {
             processedTxCallIndexes.push(i);
+
+            // This was the last output call
+            if (i === outputCalls.length - 1) {
+              allOutputCallsExecuted = true;
+            }
+
             continue;
           }
         }
       }
 
-      if (processedTxCallIndexes.length !== outputCalls.length) {
+      if (!allOutputCallsExecuted) {
         return {
           status: Status.FAILURE,
           details: {
