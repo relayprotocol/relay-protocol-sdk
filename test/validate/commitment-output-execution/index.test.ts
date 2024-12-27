@@ -6,7 +6,7 @@ import hre from "hardhat";
 import {
   ChainVmType,
   Commitment,
-  getCommitmentId,
+  getCommitmentHash,
 } from "../../../src/core/commitment";
 import { Validator } from "../../../src/core/validator";
 import { ChainConfig, Status } from "../../../src/core/validator/types";
@@ -57,10 +57,11 @@ describe("Validate commitment output execution", () => {
         },
         calls: [],
       },
+      extraData: "",
     };
 
     const signature = await solver.signMessage(
-      getBytes(getCommitmentId(commitment))
+      getBytes(getCommitmentHash(commitment))
     );
 
     // Execute the input
@@ -138,10 +139,11 @@ describe("Validate commitment output execution", () => {
         },
         calls: [],
       },
+      extraData: "",
     };
 
     const signature = await solver.signMessage(
-      getBytes(getCommitmentId(commitment))
+      getBytes(getCommitmentHash(commitment))
     );
 
     // Execute the input

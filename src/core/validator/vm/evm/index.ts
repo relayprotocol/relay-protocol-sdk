@@ -1,4 +1,4 @@
-import { Interface, Log } from "ethers";
+import { ethers, Interface, Log } from "ethers";
 
 import { getRpc } from "./rpc";
 import { CallTrace, getTrace } from "./trace";
@@ -334,12 +334,14 @@ export class EvmCommitmentValidator extends CommitmentValidator {
       // - the deposit log recipient must match the commitment input payment recipient
       // - the deposit log currency must match the commitment input payment currency
       // - the deposit log commitment id must match the current commitment id
+      // - the deposit log address must match the commitment extra data
       if (
         decoded &&
         input.payment.to.toLowerCase() === decoded.args.to.toLowerCase() &&
         input.payment.currency.toLowerCase() ===
           decoded.args.currency.toLowerCase() &&
-        commitment.id === decoded.args.commitmentId.toLowerCase()
+        commitment.id === decoded.args.commitmentId.toLowerCase() &&
+        commitment.extraData === log.address.toLowerCase()
       ) {
         return {
           status: Status.SUCCESS,
@@ -538,7 +540,19 @@ export class EvmCommitmentValidator extends CommitmentValidator {
 
     // Checks:
     // - ensure all output calls were executed in the correct order
-    const outputCalls = output.calls;
+    const outputCalls = output.calls.map((call) => {
+      const result = ethers.AbiCoder.defaultAbiCoder().decode(
+        ["(address from, address to, bytes data, uint256 value)"],
+        call
+      );
+
+      return {
+        from: result.from.toLowerCase(),
+        to: result.to.toLowerCase(),
+        data: result.data,
+        value: result.value.toString(),
+      };
+    });
     if (outputCalls.length) {
       let allOutputCallsExecuted = false;
 

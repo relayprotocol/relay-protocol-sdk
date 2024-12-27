@@ -56,6 +56,9 @@ type Commitment = {
     // - a list of calls to be executed
     calls: string[] /* solidity type: string[] */;
   };
+
+  // Extra data associated to the commitment
+  extraData: string;
 };
 ```
 
@@ -64,4 +67,4 @@ One detail that stands out in the above commitment format is that some of the fi
 - `to` / `currency`: the Relay protocol is compatible with any VM type, not just EVM - this means that we need to cover multiple address formats
 - `chain`: same as above, in order to cover non-EVM chains, the Relay protocol uses unique chain names instead of chain ids (which are only standardized for EVM chains)
 - `calls`: the format of the call is different depending on the chain's VM type, and so the calls are to be specified in a VM-specific encoding, represented as a generic `string`
-  - at the moment, `calls` are only supported for EVM chains, encoded in the following way :`solidityAbiEncode(from: address, to: address, data: bytes, value: uint256)`
+  - at the moment, `calls` are only supported for EVM chains, encoded in the following way :`solidityAbiEncode((from: address, to: address, data: bytes, value: uint256)[] calls)`

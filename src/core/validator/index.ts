@@ -1,19 +1,20 @@
-import { getBytes, verifyMessage } from "ethers";
+import { AbiCoder, getBytes, verifyMessage } from "ethers";
 
 import { EvmCommitmentValidator } from "./vm/evm";
 import { SvmCommitmentValidator } from "./vm/svm";
 
 import { ChainConfig, Side, Status } from "./types";
-import { ChainVmType, Commitment, getCommitmentId } from "../commitment";
+import { ChainVmType, Commitment, getCommitmentHash } from "../commitment";
 
 const BPS_UNIT = 1000000000000000000n;
 
-type Result = { status: Status } | { status: Status; details: any };
+type Result = { status: Status; details?: any };
 
 enum ErrorReason {
   UNSUPPORTED_CHAIN = "UNSUPPORTED_CHAIN",
   MISSING_REFUND_OPTIONS = "MISSING_REFUND_OPTIONS",
   MISSING_REFUND_EXECUTION = "MISSING_REFUND_EXECUTION",
+  INVALID_CALLS_ENCODING = "INVALID_CALLS_ENCODING",
   INVALID_SIGNATURE = "INVALID_SIGNATURE",
   INSUFFICIENT_OUTPUT_PAYMENT_AMOUNT = "INSUFFICIENT_OUTPUT_PAYMENT_AMOUNT",
   INSUFFICIENT_REFUND_PAYMENT_AMOUNT = "INSUFFICIENT_REFUND_PAYMENT_AMOUNT",
@@ -76,9 +77,36 @@ export class Validator {
       };
     }
 
+    // Validate the encoding of the calls
+    commitment.output.calls.forEach((call) => {
+      try {
+        const result = AbiCoder.defaultAbiCoder().decode(
+          ["(address from, address to, bytes data, uint256 value)"],
+          call
+        );
+
+        return {
+          from: result.from.toLowerCase(),
+          to: result.to.toLowerCase(),
+          data: result.data,
+          value: result.value.toString(),
+        };
+      } catch {
+        return {
+          status: Status.FAILURE,
+          details: {
+            reason: ErrorReason.INVALID_CALLS_ENCODING,
+            side: Side.OUTPUT,
+            commitment,
+            call,
+          },
+        };
+      }
+    });
+
     // Validate the commitment signature
     const signer = verifyMessage(
-      getBytes(getCommitmentId(commitment)),
+      getBytes(getCommitmentHash(commitment)),
       signature
     );
     if (signer.toLowerCase() !== commitment.solver.toLowerCase()) {
@@ -304,9 +332,6 @@ export class Validator {
 
       case ChainVmType.SVM:
         return new SvmCommitmentValidator();
-
-      case ChainVmType.BVM:
-        throw new Error("BVM commitment validator not implemented");
     }
   }
 }
