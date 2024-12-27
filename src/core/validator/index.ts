@@ -176,10 +176,10 @@ export class Validator {
         totalCommittedAmount;
     }
 
-    if (
-      BigInt(outputAmount.actual) <
-      (BigInt(outputAmount.committed) * (BPS_UNIT - underpaymentBps)) / BPS_UNIT
-    ) {
+    const totalOutputNeededAmount =
+      (BigInt(outputAmount.committed) * (BPS_UNIT - underpaymentBps)) /
+      BPS_UNIT;
+    if (BigInt(outputAmount.actual) < totalOutputNeededAmount) {
       return {
         status: Status.FAILURE,
         details: {
@@ -190,6 +190,7 @@ export class Validator {
           totalInputActualAmount: totalActualAmount.toString(),
           totalOutputCommittedAmount: outputAmount.committed.toString(),
           totalOutputActualAmount: outputAmount.actual.toString(),
+          totalOutputNeededAmount: totalOutputNeededAmount.toString(),
           underpaymentBps: underpaymentBps.toString(),
         },
       };
@@ -266,15 +267,14 @@ export class Validator {
           ((committedAmount - actualAmount) * BPS_UNIT) / committedAmount;
       }
 
-      if (
-        refundValidationResult.amount <
+      const refundNeededAmount =
         (BigInt(
           commitment.inputs[refund.inputIndex].refunds[refund.refundIndex]
             .minimumAmount
         ) *
           (BPS_UNIT - underpaymentBps)) /
-          BPS_UNIT
-      ) {
+        BPS_UNIT;
+      if (refundValidationResult.amount < refundNeededAmount) {
         return {
           status: Status.FAILURE,
           details: {
@@ -287,6 +287,7 @@ export class Validator {
               commitment.inputs[refund.inputIndex].refunds[refund.refundIndex]
                 .minimumAmount,
             refundActualAmount: refundValidationResult.amount.toString(),
+            refundNeededAmount: refundNeededAmount.toString(),
             underpaymentBps: underpaymentBps.toString(),
           },
         };
