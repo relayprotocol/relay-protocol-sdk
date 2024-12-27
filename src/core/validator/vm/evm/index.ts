@@ -489,8 +489,11 @@ export class EvmCommitmentValidator extends CommitmentValidator {
         const calls = await getCallsWithCache();
         for (let i = 0; i < calls.length; i++) {
           const call = calls[i];
-          if (call.to.toLowerCase() === output.payment.to.toLowerCase()) {
-            amount = (amount ?? 0n) + BigInt(call.value);
+          if (
+            call.to.toLowerCase() === output.payment.to.toLowerCase() &&
+            BigInt(call.value) > 0
+          ) {
+            amount = BigInt(call.value);
 
             // Mark the current index as being processed
             processedTxCallIndexes.push(i);
@@ -508,9 +511,12 @@ export class EvmCommitmentValidator extends CommitmentValidator {
         if (
           decoded &&
           log.address.toLowerCase() === output.payment.currency.toLowerCase() &&
-          decoded.args.to.toLowerCase() === output.payment.to.toLowerCase()
+          decoded.args.to.toLowerCase() === output.payment.to.toLowerCase() &&
+          BigInt(decoded.args.value) > 0
         ) {
-          amount = (amount ?? 0n) + decoded.args.value.toString();
+          amount = decoded.args.value.toString();
+
+          break;
         }
       }
     }
