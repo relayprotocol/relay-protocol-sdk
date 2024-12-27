@@ -490,7 +490,7 @@ export class EvmCommitmentValidator extends CommitmentValidator {
         for (let i = 0; i < calls.length; i++) {
           const call = calls[i];
           if (call.to.toLowerCase() === output.payment.to.toLowerCase()) {
-            amount = BigInt(call.value);
+            amount = (amount ?? 0n) + BigInt(call.value);
 
             // Mark the current index as being processed
             processedTxCallIndexes.push(i);
@@ -510,7 +510,7 @@ export class EvmCommitmentValidator extends CommitmentValidator {
           log.address.toLowerCase() === output.payment.currency.toLowerCase() &&
           decoded.args.to.toLowerCase() === output.payment.to.toLowerCase()
         ) {
-          amount = decoded.args.value.toString();
+          amount = (amount ?? 0n) + decoded.args.value.toString();
         }
       }
     }
