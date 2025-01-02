@@ -12,59 +12,48 @@ export enum ChainVmType {
 export const COMMITMENT_ID_LENGTH_IN_BYTES = 32;
 
 export type Commitment = {
-  // The onchain identifier for the commitment, MUST be specified in the user's deposit transaction(s) and the solver's fill transaction
-  // This value MUST be unique amongst all the commitments signed by any given solver
-  id: string /* solidity type: bytes32 */;
+  // The onchain identifier for the commitment, should be specified in the user's deposit transaction(s) and the solver's fill transaction
+  id: string;
 
-  // The EVM address of the solver which will insure the request
-  solver: string /* solidity type: address */;
+  // The EVM address of the solver given exclusive filling rights
+  solver: string;
 
-  // The bond / insurance amount for this commitment (denominated in the currency the solver holds in escrow)
-  bond: string /* solidity type: uint256 */;
-
-  // Random salt value to ensure commitment uniqueness (not strictly needed since the above id also guarantees uniqueness)
-  salt: string /* solidity type: uint256 */;
-
-  // Deadline for the user to execute all input payments
-  deadline: number /* solidity type: uint32 */;
+  // Random salt value to ensure commitment uniqueness
+  salt: string;
 
   // A commitment can have multiple inputs, each specifying:
   inputs: {
     // - the chain of the input payment
-    chain: string /* solidity type: string */;
+    chain: string;
     // - the input payment details
     payment: {
-      to: string /* solidity type: string */;
-      currency: string /* solidity type: string */;
-      amount: string /* solidity type: uint256 */;
-      weight: string /* solidity type: uint256 */;
+      currency: string;
+      amount: string;
+      weight: string;
     };
-    // - a list of refund options for when the payment was sent but the solver is unable to fulfill the request
+    // - a list of refund options when the solver is unable to fulfill the request
     refunds: {
-      chain: string /* solidity type: string */;
-      to: string /* solidity type: string */;
-      currency: string /* solidity type: string */;
-      minimumAmount: string /* solidity type: uint256 */;
+      chain: string;
+      to: string;
+      currency: string;
+      minimumAmount: string;
     }[];
   }[];
 
   // A commitment can have a single output, specifying:
   output: {
     // - the chain of the output fill
-    chain: string /* solidity type: string */;
+    chain: string;
     // - the output payment details
     payment: {
-      to: string /* solidity type: string */;
-      currency: string /* solidity type: string */;
-      minimumAmount: string /* solidity type: uint256 */;
-      expectedAmount: string /* solidity type: uint256 */;
+      to: string;
+      currency: string;
+      minimumAmount: string;
+      expectedAmount: string;
     };
-    // - a list of calls to be executed
-    calls: string[] /* solidity type: string[] */;
+    // - a list of calls to be executed (encoded based on the chain's vm type)
+    calls: string[];
   };
-
-  // Extra data associated to the commitment
-  extraData: string;
 };
 
 export const getCommitmentHash = (commitment: Commitment) => {
@@ -72,12 +61,9 @@ export const getCommitmentHash = (commitment: Commitment) => {
     Commitment: [
       { name: "id", type: "bytes32" },
       { name: "solver", type: "address" },
-      { name: "bond", type: "uint256" },
       { name: "salt", type: "uint256" },
-      { name: "deadline", type: "uint32" },
       { name: "inputs", type: "Input[]" },
       { name: "output", type: "Output" },
-      { name: "extraData", type: "string" },
     ],
     Input: [
       { name: "chain", type: "string" },
@@ -85,7 +71,6 @@ export const getCommitmentHash = (commitment: Commitment) => {
       { name: "refunds", type: "InputRefund[]" },
     ],
     InputPayment: [
-      { name: "to", type: "string" },
       { name: "currency", type: "string" },
       { name: "amount", type: "uint256" },
       { name: "weight", type: "uint256" },

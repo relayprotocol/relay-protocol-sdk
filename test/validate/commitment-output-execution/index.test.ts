@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import crypto from "crypto";
-import { getBytes } from "ethers";
+import { ZeroAddress, getBytes } from "ethers";
 import hre from "hardhat";
 
 import {
@@ -10,6 +10,8 @@ import {
 } from "../../../src/core/commitment";
 import { Validator } from "../../../src/core/validator";
 import { ChainConfig, Status } from "../../../src/core/validator/types";
+
+const CREDIT_CONTRACT = ZeroAddress;
 
 describe("Validate commitment output execution", () => {
   const chainConfigs: Record<string, ChainConfig> = {
@@ -25,16 +27,13 @@ describe("Validate commitment output execution", () => {
     const commitment: Commitment = {
       id: "0x" + crypto.randomBytes(32).toString("hex"),
       solver: solver.address,
-      bond: "1000000000000000000",
       salt: "0",
-      deadline: Math.floor(Date.now() / 1000) + 3600,
       inputs: [
         {
           chain: "ethereum",
           payment: {
             currency: "0x0000000000000000000000000000000000000000",
             amount: "1000000000000000000",
-            to: solver.address,
             weight: "1",
           },
           refunds: [
@@ -57,7 +56,6 @@ describe("Validate commitment output execution", () => {
         },
         calls: [],
       },
-      extraData: "",
     };
 
     const signature = await solver.signMessage(
@@ -65,8 +63,8 @@ describe("Validate commitment output execution", () => {
     );
 
     // Execute the input
-    const inputTransaction = await user.sendTransaction({
-      to: commitment.inputs[0].payment.to,
+    await user.sendTransaction({
+      to: CREDIT_CONTRACT,
       data: commitment.id,
       value: commitment.inputs[0].payment.amount,
     });
@@ -86,18 +84,18 @@ describe("Validate commitment output execution", () => {
     expect(dataValidationResult.status).to.eq(Status.SUCCESS);
 
     const executionValidationResult =
-      await validator.validateCommitmentOutputExecution(
+      await validator.validateCommitmentOutputExecution({
         commitment,
-        [
+        execution: {
+          transactionId: outputTransaction.hash,
+        },
+        userPayments: [
           {
             inputIndex: 0,
-            transactionId: inputTransaction.hash,
+            amount: commitment.inputs[0].payment.amount,
           },
         ],
-        {
-          transactionId: outputTransaction.hash,
-        }
-      );
+      });
     expect(executionValidationResult.status).to.eq(Status.SUCCESS);
   });
 
@@ -107,16 +105,13 @@ describe("Validate commitment output execution", () => {
     const commitment: Commitment = {
       id: "0x" + crypto.randomBytes(32).toString("hex"),
       solver: solver.address,
-      bond: "1000000000000000000",
       salt: "0",
-      deadline: Math.floor(Date.now() / 1000) + 3600,
       inputs: [
         {
           chain: "ethereum",
           payment: {
             currency: "0x0000000000000000000000000000000000000000",
             amount: "1000000000000000000",
-            to: solver.address,
             weight: "1",
           },
           refunds: [
@@ -139,7 +134,6 @@ describe("Validate commitment output execution", () => {
         },
         calls: [],
       },
-      extraData: "",
     };
 
     const signature = await solver.signMessage(
@@ -147,8 +141,8 @@ describe("Validate commitment output execution", () => {
     );
 
     // Execute the input
-    const inputTransaction = await user.sendTransaction({
-      to: commitment.inputs[0].payment.to,
+    await user.sendTransaction({
+      to: CREDIT_CONTRACT,
       data: commitment.id,
       value: commitment.inputs[0].payment.amount,
     });
@@ -168,18 +162,18 @@ describe("Validate commitment output execution", () => {
     expect(dataValidationResult.status).to.eq(Status.SUCCESS);
 
     const executionValidationResult =
-      await validator.validateCommitmentOutputExecution(
+      await validator.validateCommitmentOutputExecution({
         commitment,
-        [
+        execution: {
+          transactionId: outputTransaction.hash,
+        },
+        userPayments: [
           {
             inputIndex: 0,
-            transactionId: inputTransaction.hash,
+            amount: commitment.inputs[0].payment.amount,
           },
         ],
-        {
-          transactionId: outputTransaction.hash,
-        }
-      );
+      });
     expect(executionValidationResult.status).to.eq(Status.FAILURE);
     expect((executionValidationResult as any).details?.reason).to.eq(
       "INSUFFICIENT_OUTPUT_PAYMENT_AMOUNT"

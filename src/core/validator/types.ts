@@ -22,24 +22,37 @@ export type ValidationResult =
   | { status: Status.FAILURE; details: any };
 
 export abstract class CommitmentValidator {
-  public abstract validateInput(data: {
-    chainConfigs: Record<string, ChainConfig>;
-    commitment: Commitment;
-    inputIndex: number;
-    transactionId: string;
-  }): Promise<ValidationResult>;
-
+  // Validate the output execution of a commitment
   public abstract validateOutput(data: {
+    // Should include the output chain config
     chainConfigs: Record<string, ChainConfig>;
+    // The relevant commitment
     commitment: Commitment;
+    // The solver's fill transaction
     transactionId: string;
+    // The actual user payments, corresponding to the input payments specified by the commitment
+    userPayments: {
+      inputIndex: number;
+      amount: string;
+    }[];
   }): Promise<ValidationResult>;
 
+  // Validate the refund execution of a commitment
   public abstract validateRefund(data: {
+    // Should include the refund chain config
     chainConfigs: Record<string, ChainConfig>;
+    // The relevant commitment
     commitment: Commitment;
-    inputIndex: number;
-    refundIndex: number;
+    // The solver's refund transaction
     transactionId: string;
+    // The actual user payments, corresponding to the input payments specified by the commitment
+    userPayments: {
+      inputIndex: number;
+      amount: string;
+    }[];
+    // The input to refund
+    inputIndex: number;
+    // The refund option within the above input
+    refundIndex: number;
   }): Promise<ValidationResult>;
 }

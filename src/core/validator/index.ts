@@ -10,14 +10,24 @@ const BPS_UNIT = 1000000000000000000n;
 
 type Result = { status: Status; details?: any };
 
+type Amount = {
+  committed: bigint;
+  actual: bigint;
+};
+
 enum ErrorReason {
   UNSUPPORTED_CHAIN = "UNSUPPORTED_CHAIN",
-  MISSING_REFUND_OPTIONS = "MISSING_REFUND_OPTIONS",
-  MISSING_REFUND_EXECUTION = "MISSING_REFUND_EXECUTION",
+  MISSING_INPUTS = "MISSING_INPUTS",
+  MISSING_REFUNDS = "MISSING_REFUNDS",
   INVALID_CALLS_ENCODING = "INVALID_CALLS_ENCODING",
   INVALID_SIGNATURE = "INVALID_SIGNATURE",
+
+  MISSING_USER_PAYMENT = "MISSING_USER_PAYMENT",
+  NON_UNIQUE_USER_PAYMENTS = "NON_UNIQUE_USER_PAYMENTS",
+
   INSUFFICIENT_OUTPUT_PAYMENT_AMOUNT = "INSUFFICIENT_OUTPUT_PAYMENT_AMOUNT",
   INSUFFICIENT_REFUND_PAYMENT_AMOUNT = "INSUFFICIENT_REFUND_PAYMENT_AMOUNT",
+  MISSING_REFUND_EXECUTION = "MISSING_REFUND_EXECUTION",
 }
 
 export class Validator {
@@ -31,29 +41,26 @@ export class Validator {
     commitment: Commitment,
     signature: string
   ): Promise<Result> {
-    // Validate each input
-    for (const input of commitment.inputs) {
-      // Validate the input chain
-      const chain = this.chainConfigs[input.chain];
-      if (!chain) {
-        return {
-          status: Status.FAILURE,
-          details: {
-            reason: ErrorReason.UNSUPPORTED_CHAIN,
-            side: Side.INPUT,
-            commitment,
-            input,
-            chainConfigs: this.chainConfigs,
-          },
-        };
-      }
+    // Ensure we have at least one input
+    if (!commitment.inputs.length) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.MISSING_INPUTS,
+          side: Side.INPUT,
+          commitment,
+          chainConfigs: this.chainConfigs,
+        },
+      };
+    }
 
-      // Validate the input refunds
+    // Ensure every input has at least one refund
+    for (const input of commitment.inputs) {
       if (!input.refunds.length) {
         return {
           status: Status.FAILURE,
           details: {
-            reason: ErrorReason.MISSING_REFUND_OPTIONS,
+            reason: ErrorReason.MISSING_REFUNDS,
             side: Side.INPUT,
             commitment,
             input,
@@ -61,9 +68,25 @@ export class Validator {
           },
         };
       }
+
+      // Validate the chain of every refund
+      for (const refund of input.refunds) {
+        const chain = this.chainConfigs[refund.chain];
+        if (!chain) {
+          return {
+            status: Status.FAILURE,
+            details: {
+              reason: ErrorReason.UNSUPPORTED_CHAIN,
+              side: Side.REFUND,
+              commitment,
+              chainConfigs: this.chainConfigs,
+            },
+          };
+        }
+      }
     }
 
-    // Validate the output chain
+    // Validate the chain of the output
     const chain = this.chainConfigs[commitment.output.chain];
     if (!chain) {
       return {
@@ -79,6 +102,7 @@ export class Validator {
 
     // Validate the encoding of the calls
     commitment.output.calls.forEach((call) => {
+      // At the moment, only EVM calls are supported
       try {
         const result = AbiCoder.defaultAbiCoder().decode(
           ["(address from, address to, bytes data, uint256 value)"],
@@ -124,49 +148,31 @@ export class Validator {
     return { status: Status.SUCCESS };
   }
 
-  public async validateCommitmentOutputExecution(
-    commitment: Commitment,
-    inputExecutions: {
-      inputIndex: number;
+  public async validateCommitmentOutputExecution(data: {
+    // The relevant commitment
+    commitment: Commitment;
+    // The output execution data
+    execution: {
       transactionId: string;
-    }[],
-    outputExecution: {
-      transactionId: string;
-    }
-  ): Promise<Result> {
-    // Validate the inputs
-    const inputAmounts: {
-      committed: bigint;
-      actual: bigint;
-      weight: bigint;
-    }[] = [];
-    for (const { inputIndex, transactionId } of inputExecutions) {
-      const input = commitment.inputs[inputIndex];
-
-      const validationResult = await this.getCommitmentValidator(
-        this.chainConfigs[input.chain].vmType
-      ).validateInput({
-        chainConfigs: this.chainConfigs,
-        commitment,
-        inputIndex,
-        transactionId,
-      });
-      if (validationResult.status !== Status.SUCCESS) {
-        return validationResult;
-      }
-
-      inputAmounts.push({
-        committed: BigInt(input.payment.amount),
-        actual: validationResult.amount,
-        weight: BigInt(input.payment.weight),
-      });
-    }
-
-    // Validate the output
-    let outputAmount: {
-      committed: bigint;
-      actual: bigint;
     };
+    // The actual user payments, corresponding to the input payments specified by the commitment
+    userPayments: {
+      inputIndex: number;
+      amount: string;
+    }[];
+  }): Promise<Result> {
+    const { commitment, execution, userPayments } = data;
+
+    // Verify the user payments
+    {
+      const result = this.verifyUserPayments({ commitment, userPayments });
+      if (result.status !== Status.SUCCESS) {
+        return result;
+      }
+    }
+
+    // Validate the output and get the output amount (committed and actual)
+    let outputAmount: Amount;
     {
       const output = commitment.output;
 
@@ -175,7 +181,7 @@ export class Validator {
       ).validateOutput({
         chainConfigs: this.chainConfigs,
         commitment,
-        transactionId: outputExecution.transactionId,
+        transactionId: execution.transactionId,
       });
       if (validationResult.status !== Status.SUCCESS) {
         return validationResult;
@@ -187,38 +193,45 @@ export class Validator {
       };
     }
 
-    // Get the total weighted committed and actual amounts
-    const totalCommittedAmount = inputAmounts.reduce(
-      (total, { committed, weight }) => total + committed * weight,
-      0n
-    );
-    const totalActualAmount = inputAmounts.reduce(
-      (total, { actual, weight }) => total + actual * weight,
-      0n
-    );
+    // Get the input amount (committed and actual)
+    const inputAmount: Amount = {
+      committed: commitment.inputs
+        .map((i) => BigInt(i.payment.amount) * BigInt(i.payment.weight))
+        .reduce((a, b) => a + b),
+      actual: userPayments
+        .map(
+          (p) =>
+            BigInt(p.amount) *
+            BigInt(commitment.inputs[p.inputIndex].payment.weight)
+        )
+        .reduce((a, b) => a + b),
+    };
 
+    // Determine whether there was any underpayment
     let underpaymentBps = 0n;
-    if (totalActualAmount < totalCommittedAmount) {
+    if (inputAmount.actual < inputAmount.committed) {
       underpaymentBps =
-        ((totalCommittedAmount - totalActualAmount) * BPS_UNIT) /
-        totalCommittedAmount;
+        ((inputAmount.committed - inputAmount.actual) * BPS_UNIT) /
+        inputAmount.committed;
     }
 
-    const totalOutputNeededAmount =
+    // Determine the needed output amount based on the committed amount and any user underpayment
+    const neededOutputAmount =
       (BigInt(outputAmount.committed) * (BPS_UNIT - underpaymentBps)) /
       BPS_UNIT;
-    if (BigInt(outputAmount.actual) < totalOutputNeededAmount) {
+    if (BigInt(outputAmount.actual) < neededOutputAmount) {
       return {
         status: Status.FAILURE,
         details: {
           reason: ErrorReason.INSUFFICIENT_OUTPUT_PAYMENT_AMOUNT,
+          side: Side.OUTPUT,
           commitment,
           chainConfigs: this.chainConfigs,
-          totalInputCommittedAmount: totalCommittedAmount.toString(),
-          totalInputActualAmount: totalActualAmount.toString(),
-          totalOutputCommittedAmount: outputAmount.committed.toString(),
-          totalOutputActualAmount: outputAmount.actual.toString(),
-          totalOutputNeededAmount: totalOutputNeededAmount.toString(),
+          inputAmountCommitted: inputAmount.committed.toString(),
+          inputAmountActual: inputAmount.actual.toString(),
+          outputAmountCommitted: outputAmount.committed.toString(),
+          outputAmountActual: outputAmount.actual.toString(),
+          outputAmountNeeded: neededOutputAmount.toString(),
           underpaymentBps: underpaymentBps.toString(),
         },
       };
@@ -227,28 +240,42 @@ export class Validator {
     return { status: Status.SUCCESS };
   }
 
-  public async validateCommitmentRefundExecution(
-    commitment: Commitment,
-    inputExecutions: {
-      inputIndex: number;
-      transactionId: string;
-    }[],
-    refundExecutions: {
+  public async validateCommitmentRefundExecution(data: {
+    // The relevant commitment
+    commitment: Commitment;
+    // The refund executions data
+    executions: {
       inputIndex: number;
       refundIndex: number;
       transactionId: string;
-    }[]
-  ): Promise<Result> {
-    // Validate the inputs and refunds
-    for (const { inputIndex, transactionId } of inputExecutions) {
+    }[];
+    // The actual user payments, corresponding to the input payments specified by the commitment
+    userPayments: {
+      inputIndex: number;
+      amount: string;
+    }[];
+  }): Promise<Result> {
+    const { commitment, executions, userPayments } = data;
+
+    // Verify the user payments
+    {
+      const result = this.verifyUserPayments({ commitment, userPayments });
+      if (result.status !== Status.SUCCESS) {
+        return result;
+      }
+    }
+
+    // Validate the refunds
+    for (const { inputIndex, amount } of userPayments) {
       const input = commitment.inputs[inputIndex];
 
-      const refund = refundExecutions.find((e) => e.inputIndex === inputIndex);
+      const refund = executions.find((e) => e.inputIndex === inputIndex);
       if (!refund) {
         return {
           status: Status.FAILURE,
           details: {
             reason: ErrorReason.MISSING_REFUND_EXECUTION,
+            side: Side.REFUND,
             commitment,
             inputIndex,
             chainConfigs: this.chainConfigs,
@@ -256,20 +283,7 @@ export class Validator {
         };
       }
 
-      // Validate input
-      const inputValidationResult = await this.getCommitmentValidator(
-        this.chainConfigs[input.chain].vmType
-      ).validateInput({
-        chainConfigs: this.chainConfigs,
-        commitment,
-        inputIndex,
-        transactionId,
-      });
-      if (inputValidationResult.status !== Status.SUCCESS) {
-        return inputValidationResult;
-      }
-
-      // Validate refund
+      // Validate the refund and get the refund amount (committed and actual)
       const refundValidationResult = await this.getCommitmentValidator(
         this.chainConfigs[input.chain].vmType
       ).validateRefund({
@@ -283,40 +297,94 @@ export class Validator {
         return refundValidationResult;
       }
 
-      // Get the total weighted committed and actual amounts
-      const committedAmount =
-        BigInt(input.payment.amount) * BigInt(input.payment.weight);
-      const actualAmount =
-        inputValidationResult.amount * BigInt(input.payment.weight);
-
-      let underpaymentBps = 0n;
-      if (actualAmount < committedAmount) {
-        underpaymentBps =
-          ((committedAmount - actualAmount) * BPS_UNIT) / committedAmount;
-      }
-
-      const refundNeededAmount =
-        (BigInt(
+      const refundAmount: Amount = {
+        committed: BigInt(
           commitment.inputs[refund.inputIndex].refunds[refund.refundIndex]
             .minimumAmount
-        ) *
-          (BPS_UNIT - underpaymentBps)) /
+        ),
+        actual: BigInt(refundValidationResult.amount),
+      };
+
+      // Get the input amount (committed and actual)
+      const inputAmount: Amount = {
+        committed: BigInt(input.payment.amount) * BigInt(input.payment.weight),
+        actual: BigInt(amount) * BigInt(input.payment.weight),
+      };
+
+      // Determine whether there was any underpayment
+      let underpaymentBps = 0n;
+      if (inputAmount.actual < inputAmount.committed) {
+        underpaymentBps =
+          ((inputAmount.committed - inputAmount.actual) * BPS_UNIT) /
+          inputAmount.committed;
+      }
+
+      // Determine the needed output amount based on the committed amount and any user underpayment
+      const neededRefundAmount =
+        (BigInt(refundAmount.committed) * (BPS_UNIT - underpaymentBps)) /
         BPS_UNIT;
-      if (refundValidationResult.amount < refundNeededAmount) {
+      if (refundAmount.actual < neededRefundAmount) {
         return {
           status: Status.FAILURE,
           details: {
             reason: ErrorReason.INSUFFICIENT_REFUND_PAYMENT_AMOUNT,
+            side: Side.REFUND,
             commitment,
             chainConfigs: this.chainConfigs,
-            inputCommittedAmount: committedAmount.toString(),
-            inputActualAmount: actualAmount.toString(),
-            refundCommittedAmount:
-              commitment.inputs[refund.inputIndex].refunds[refund.refundIndex]
-                .minimumAmount,
-            refundActualAmount: refundValidationResult.amount.toString(),
-            refundNeededAmount: refundNeededAmount.toString(),
+            inputAmountCommitted: inputAmount.committed.toString(),
+            inputAmountActual: inputAmount.actual.toString(),
+            refundAmountCommitted: refundAmount.committed.toString(),
+            refundAmountActual: refundAmount.actual.toString(),
+            refundAmountNeeded: neededRefundAmount.toString(),
             underpaymentBps: underpaymentBps.toString(),
+          },
+        };
+      }
+    }
+
+    return { status: Status.SUCCESS };
+  }
+
+  private verifyUserPayments(data: {
+    // The relevant commitment
+    commitment: Commitment;
+    // The user payments, corresponding to the input payments specified by the commitment
+    userPayments: {
+      inputIndex: number;
+      amount: string;
+    }[];
+  }) {
+    const { commitment, userPayments } = data;
+
+    // The user payments should point to unique commitment inputs
+    if (
+      userPayments.length !==
+      new Set(userPayments.map((p) => p.inputIndex)).size
+    ) {
+      return {
+        status: Status.FAILURE,
+        details: {
+          reason: ErrorReason.NON_UNIQUE_USER_PAYMENTS,
+          side: Side.INPUT,
+          commitment,
+          userPayments,
+        },
+      };
+    }
+
+    // Every commitment input payment should be pointed to by a user payment
+    for (let i = 0; i < commitment.inputs.length; i++) {
+      const userPayment = userPayments.find((p) => p.inputIndex === i);
+      if (!userPayment) {
+        return {
+          status: Status.FAILURE,
+          details: {
+            reason: ErrorReason.MISSING_USER_PAYMENT,
+            side: Side.INPUT,
+            commitment,
+            userPayments,
+            missingInputPayment: commitment.inputs[i],
+            chainConfigs: this.chainConfigs,
           },
         };
       }
