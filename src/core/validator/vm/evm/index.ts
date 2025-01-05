@@ -35,13 +35,9 @@ const iface = new Interface([
 ]);
 
 const TRANSFER_TOPIC = iface.getEvent("Transfer")!.topicHash;
-const RELAY_DEPOSIT_TOPIC = iface.getEvent("RelayDeposit")!.topicHash;
 
 const getTransferLogs = (logs: readonly Log[]) =>
   logs.filter((log) => log.topics[0] === TRANSFER_TOPIC);
-
-const getRelayDepositLogs = (logs: readonly Log[]) =>
-  logs.filter((log) => log.topics[0] === RELAY_DEPOSIT_TOPIC);
 
 type CallEvm = {
   from: string;
