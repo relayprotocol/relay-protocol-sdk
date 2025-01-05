@@ -20,7 +20,6 @@ const NATIVE_CURRENCY = "0x0000000000000000000000000000000000000000";
 const iface = new Interface([
   // Events
   "event Transfer(address indexed from, address indexed to, uint256 value)",
-  "event RelayDeposit(bytes32 indexed commitmentId, address indexed to, address indexed currency, uint256 amount)",
   // Methods
   "function transfer(address to, uint256 amount)",
   "function transferFrom(address from, address to, uint256 amount)",
@@ -275,15 +274,15 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     // - ensure all output calls were executed in the correct order
     const outputCalls = output.calls.map((call) => {
       const result = ethers.AbiCoder.defaultAbiCoder().decode(
-        ["(address from, address to, bytes data, uint256 value)"],
+        ["(address from, address to, bytes data, uint256 value) call"],
         call
       );
 
       return {
-        from: result.from.toLowerCase(),
-        to: result.to.toLowerCase(),
-        data: result.data,
-        value: result.value.toString(),
+        from: result.call.from.toLowerCase(),
+        to: result.call.to.toLowerCase(),
+        data: result.call.data,
+        value: result.call.value.toString(),
       };
     });
     if (outputCalls.length) {

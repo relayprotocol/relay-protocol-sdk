@@ -105,16 +105,16 @@ export class Validator {
       // At the moment, only EVM calls are supported
       try {
         const result = AbiCoder.defaultAbiCoder().decode(
-          ["(address from, address to, bytes data, uint256 value)"],
+          ["(address from, address to, bytes data, uint256 value) call"],
           call
         );
 
-        return {
-          from: result.from.toLowerCase(),
-          to: result.to.toLowerCase(),
-          data: result.data,
-          value: result.value.toString(),
-        };
+        ({
+          from: result.call.from.toLowerCase(),
+          to: result.call.to.toLowerCase(),
+          data: result.call.data,
+          value: result.call.value.toString(),
+        });
       } catch {
         return {
           status: Status.FAILURE,
