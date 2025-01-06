@@ -209,7 +209,11 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     if (output.payment.currency.toLowerCase() === NATIVE_CURRENCY) {
       // Case 1: native currency
 
-      if (tx.to?.toLowerCase() === output.payment.to.toLowerCase()) {
+      if (
+        tx.to?.toLowerCase() === output.payment.to.toLowerCase() &&
+        // Additionally, if the output payment minimum amount is non-zero, ensure that `tx.value` is non-zero
+        (BigInt(output.payment.minimumAmount) > 0n ? tx.value > 0n : true)
+      ) {
         // Case 1: direct payment
 
         amount = tx.value;
@@ -221,7 +225,10 @@ export class EvmCommitmentValidator extends CommitmentValidator {
           const call = calls[i];
           if (
             call.to.toLowerCase() === output.payment.to.toLowerCase() &&
-            BigInt(call.value) > 0
+            // Additionally, if the output payment minimum amount is non-zero, ensure that `call.value` is non-zero
+            (BigInt(output.payment.minimumAmount) > 0n
+              ? BigInt(call.value) > 0n
+              : true)
           ) {
             amount = BigInt(call.value);
 
@@ -242,7 +249,10 @@ export class EvmCommitmentValidator extends CommitmentValidator {
           decoded &&
           log.address.toLowerCase() === output.payment.currency.toLowerCase() &&
           decoded.args.to.toLowerCase() === output.payment.to.toLowerCase() &&
-          BigInt(decoded.args.value) > 0
+          // Additionally, if the output payment minimum amount is non-zero, ensure that `decoded.args.value` is non-zero
+          (BigInt(output.payment.minimumAmount) > 0n
+            ? BigInt(decoded.args.value) > 0n
+            : true)
         ) {
           amount = decoded.args.value.toString();
 
@@ -493,7 +503,11 @@ export class EvmCommitmentValidator extends CommitmentValidator {
     if (refund.currency.toLowerCase() === NATIVE_CURRENCY) {
       // Case 1: native currency
 
-      if (tx.to?.toLowerCase() === refund.to.toLowerCase()) {
+      if (
+        tx.to?.toLowerCase() === refund.to.toLowerCase() &&
+        // Additionally, if the refund payment minimum amount is non-zero, ensure that `tx.value` is non-zero
+        (BigInt(refund.minimumAmount) > 0n ? tx.value > 0n : true)
+      ) {
         // Case 1: direct payment
 
         amount = tx.value;
@@ -503,7 +517,11 @@ export class EvmCommitmentValidator extends CommitmentValidator {
         const calls = await getCallsWithCache();
         for (let i = 0; i < calls.length; i++) {
           const call = calls[i];
-          if (call.to.toLowerCase() === refund.to.toLowerCase()) {
+          if (
+            call.to.toLowerCase() === refund.to.toLowerCase() &&
+            // Additionally, if the refund payment minimum amount is non-zero, ensure that `call.value` is non-zero
+            (BigInt(refund.minimumAmount) > 0n ? BigInt(call.value) > 0n : true)
+          ) {
             amount = BigInt(call.value);
 
             break;
@@ -519,7 +537,11 @@ export class EvmCommitmentValidator extends CommitmentValidator {
         if (
           decoded &&
           log.address.toLowerCase() === refund.currency.toLowerCase() &&
-          decoded.args.to.toLowerCase() === refund.to.toLowerCase()
+          decoded.args.to.toLowerCase() === refund.to.toLowerCase() &&
+          // Additionally, if the refund payment minimum amount is non-zero, ensure that `decoded.args.value` is non-zero
+          (BigInt(refund.minimumAmount) > 0n
+            ? BigInt(decoded.args.value) > 0n
+            : true)
         ) {
           amount = decoded.args.value.toString();
         }
