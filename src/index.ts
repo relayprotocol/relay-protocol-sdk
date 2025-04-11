@@ -1,4 +1,3 @@
-import { Commitment } from "./core/commitment";
-import { Validator } from "./core/validator";
+import { Order, decodeCall, getOrderHash } from "./order";
 
-export { Commitment, Validator };
+export { Order, decodeCall, getOrderHash };
