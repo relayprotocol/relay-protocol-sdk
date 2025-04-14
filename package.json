@@ -1,10 +1,10 @@
 {
-  "name": "@reservoir0x/relay-protocol-order",
+  "name": "@reservoir0x/relay-protocol-sdk",
   "version": "0.0.1",
-  "description": "Relay protocol order",
+  "description": "Relay protocol SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "repository": "https://github.com/reservoirprotocol/relay-protocol-order",
+  "repository": "https://github.com/reservoirprotocol/relay-protocol-sdk",
   "author": "Uneven Labs",
   "license": "MIT",
   "scripts": {
