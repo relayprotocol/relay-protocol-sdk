@@ -23,6 +23,7 @@ export type Order = {
       to: string;
       currency: string;
       minimumAmount: bigint;
+      deadline: number;
     }[];
   }[];
 
@@ -37,6 +38,8 @@ export type Order = {
       minimumAmount: bigint;
       expectedAmount: bigint;
     }[];
+    // - deadline for the output to be filled
+    deadline: number;
     // - a list of calls to be executed (encoded based on the chain's vm type)
     calls: string[];
   };
@@ -114,10 +117,12 @@ export const getOrderHash = (order: Order) => {
         { name: "to", type: "bytes32" },
         { name: "currency", type: "bytes32" },
         { name: "minimumAmount", type: "uint256" },
+        { name: "deadline", type: "uint32" },
       ],
       Output: [
         { name: "chainId", type: "uint256" },
         { name: "payments", type: "OutputPayment[]" },
+        { name: "deadline", type: "uint32" },
         { name: "calls", type: "bytes[]" },
       ],
       OutputPayment: [
