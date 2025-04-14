@@ -30,20 +30,25 @@ export type Order = {
   output: {
     // - the chain of the output fill
     chainId: number;
-    // - the output payment details
-    payment: {
+    // - the output payments details
+    payments: {
       to: string;
       currency: string;
       minimumAmount: bigint;
       expectedAmount: bigint;
-      fees: {
-        recipient: string;
-        amount: bigint;
-      }[];
-    };
+    }[];
     // - a list of calls to be executed (encoded based on the chain's vm type)
     calls: string[];
   };
+
+  // An order can specify fees to be paid on successful fill
+  fees: {
+    chainId: number;
+    currency: string;
+    amount: bigint;
+    weight: bigint;
+    recipient: string;
+  }[];
 };
 
 type VmType = "ethereum-vm" | "solana-vm" | "tron-vm" | "ton-vm" | "sui-vm";
@@ -92,6 +97,7 @@ export const getOrderHash = (order: Order) => {
         { name: "salt", type: "uint256" },
         { name: "inputs", type: "Input[]" },
         { name: "output", type: "Output" },
+        { name: "fees", type: "Fee[]" },
       ],
       Input: [
         { name: "chainId", type: "uint256" },
@@ -99,31 +105,33 @@ export const getOrderHash = (order: Order) => {
         { name: "refunds", type: "InputRefund[]" },
       ],
       InputPayment: [
-        { name: "currency", type: "bytes" },
+        { name: "currency", type: "bytes32" },
         { name: "amount", type: "uint256" },
         { name: "weight", type: "uint256" },
       ],
       InputRefund: [
         { name: "chainId", type: "uint256" },
-        { name: "to", type: "bytes" },
-        { name: "currency", type: "bytes" },
+        { name: "to", type: "bytes32" },
+        { name: "currency", type: "bytes32" },
         { name: "minimumAmount", type: "uint256" },
       ],
       Output: [
         { name: "chainId", type: "uint256" },
-        { name: "payment", type: "OutputPayment" },
+        { name: "payments", type: "OutputPayment[]" },
         { name: "calls", type: "bytes[]" },
       ],
       OutputPayment: [
-        { name: "to", type: "bytes" },
-        { name: "currency", type: "bytes" },
+        { name: "to", type: "bytes32" },
+        { name: "currency", type: "bytes32" },
         { name: "minimumAmount", type: "uint256" },
         { name: "expectedAmount", type: "uint256" },
-        { name: "fees", type: "Fee[]" },
       ],
       Fee: [
+        { name: "chainId", type: "uint256" },
+        { name: "currency", type: "bytes32" },
         { name: "amount", type: "uint256" },
-        { name: "recipient", type: "bytes" },
+        { name: "weight", type: "uint256" },
+        { name: "recipient", type: "bytes32" },
       ],
     },
     primaryType: "Order",

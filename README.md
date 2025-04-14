@@ -1,3 +1,3 @@
-## Relay order
+## Relay protocol SDK
 
-> #### Type definitions and utilities for Relay protocol orders
+> #### SDK for the Relay protocol
