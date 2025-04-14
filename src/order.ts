@@ -24,6 +24,7 @@ export type Order = {
       currency: string;
       minimumAmount: bigint;
       deadline: number;
+      extraData: string;
     }[];
   }[];
 
@@ -38,10 +39,12 @@ export type Order = {
       minimumAmount: bigint;
       expectedAmount: bigint;
     }[];
-    // - deadline for the output to be filled
-    deadline: number;
     // - a list of calls to be executed (encoded based on the chain's vm type)
     calls: string[];
+    // - deadline for the output to be filled
+    deadline: number;
+    // - extra data (encoded based on the chain's vm type)
+    extraData: string;
   };
 
   // An order can specify fees to be paid on successful fill
@@ -92,6 +95,41 @@ export const decodeCall = (call: string, vmType: VmType): DecodedCall => {
   }
 };
 
+type DecodedExtraData = {
+  vmType: "ethereum-vm";
+  extraData: {
+    fillContract: string;
+  };
+};
+
+export const decodeExtraData = (
+  extraData: string,
+  vmType: VmType
+): DecodedExtraData => {
+  switch (vmType) {
+    case "ethereum-vm": {
+      try {
+        const result = decodeAbiParameters(
+          [{ type: "address" }],
+          extraData as Hex
+        );
+
+        return {
+          vmType: "ethereum-vm",
+          extraData: {
+            fillContract: result[0],
+          },
+        };
+      } catch {
+        throw new Error("Failed to decode call");
+      }
+    }
+
+    default:
+      throw new Error("Unsupported vm type");
+  }
+};
+
 export const getOrderHash = (order: Order) => {
   return hashStruct({
     types: {
@@ -118,12 +156,14 @@ export const getOrderHash = (order: Order) => {
         { name: "currency", type: "bytes32" },
         { name: "minimumAmount", type: "uint256" },
         { name: "deadline", type: "uint32" },
+        { name: "extraData", type: "bytes" },
       ],
       Output: [
         { name: "chainId", type: "uint256" },
         { name: "payments", type: "OutputPayment[]" },
         { name: "deadline", type: "uint32" },
         { name: "calls", type: "bytes[]" },
+        { name: "extraData", type: "bytes" },
       ],
       OutputPayment: [
         { name: "to", type: "bytes32" },

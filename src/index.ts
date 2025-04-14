@@ -1,3 +1,3 @@
-import { Order, decodeCall, getOrderHash } from "./order";
+import { Order, decodeCall, decodeExtraData, getOrderHash } from "./order";
 
-export { Order, decodeCall, getOrderHash };
+export { Order, decodeCall, decodeExtraData, getOrderHash };
