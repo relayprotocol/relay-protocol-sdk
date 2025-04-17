@@ -27,9 +27,9 @@ export type SolverSuccessFillMessage = {
 
 export const getSolverSuccessFillMessageHash = (
   message: SolverSuccessFillMessage,
-  config: ChainIdToVmType
+  chainsConfig: ChainIdToVmType
 ) => {
-  const vmType = (chainId: number) => getChainVmType(chainId, config);
+  const vmType = (chainId: number) => getChainVmType(chainId, chainsConfig);
 
   return hashStruct({
     types: {
@@ -54,7 +54,7 @@ export const getSolverSuccessFillMessageHash = (
     primaryType: "SolverSuccessFill",
     data: {
       data: {
-        order: normalizeOrder(message.data.order, config),
+        order: normalizeOrder(message.data.order, chainsConfig),
         orderSignature: encodeBytes(message.data.orderSignature),
         inputs: message.data.inputs.map((input) => ({
           transactionId: encodeTransactionId(

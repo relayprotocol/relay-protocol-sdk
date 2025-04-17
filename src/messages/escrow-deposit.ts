@@ -25,9 +25,9 @@ export type EscrowDepositMessage = {
 
 export const getEscrowDepositMessageHash = (
   message: EscrowDepositMessage,
-  config: ChainIdToVmType
+  chainsConfig: ChainIdToVmType
 ) => {
-  const vmType = (chainId: number) => getChainVmType(chainId, config);
+  const vmType = (chainId: number) => getChainVmType(chainId, chainsConfig);
 
   return hashStruct({
     types: {

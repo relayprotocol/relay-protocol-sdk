@@ -29,9 +29,9 @@ export type SolverRefundFillMessage = {
 
 export const getSolverRefundFillMessageHash = (
   message: SolverRefundFillMessage,
-  config: ChainIdToVmType
+  chainsConfig: ChainIdToVmType
 ) => {
-  const vmType = (chainId: number) => getChainVmType(chainId, config);
+  const vmType = (chainId: number) => getChainVmType(chainId, chainsConfig);
 
   return hashStruct({
     types: {
@@ -60,7 +60,7 @@ export const getSolverRefundFillMessageHash = (
     primaryType: "SolverRefundFill",
     data: {
       data: {
-        order: normalizeOrder(message.data.order, config),
+        order: normalizeOrder(message.data.order, chainsConfig),
         orderSignature: encodeBytes(message.data.orderSignature),
         inputs: message.data.inputs.map((input) => ({
           transactionId: encodeTransactionId(

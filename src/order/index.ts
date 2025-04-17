@@ -112,8 +112,8 @@ export const ORDER_EIP712_TYPES = {
   ],
 };
 
-export const normalizeOrder = (order: Order, config: ChainIdToVmType) => {
-  const vmType = (chainId: number) => getChainVmType(chainId, config);
+export const normalizeOrder = (order: Order, chainsConfig: ChainIdToVmType) => {
+  const vmType = (chainId: number) => getChainVmType(chainId, chainsConfig);
 
   return {
     solver: order.solver,

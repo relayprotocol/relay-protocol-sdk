@@ -9,12 +9,15 @@ export type VmType =
 
 export type ChainIdToVmType = Record<number, VmType>;
 
-export const getChainVmType = (chainId: number, config: ChainIdToVmType) => {
-  if (!config[chainId]) {
+export const getChainVmType = (
+  chainId: number,
+  chainsConfig: ChainIdToVmType
+) => {
+  if (!chainsConfig[chainId]) {
     throw new Error(`Unknown vm type for chain ${chainId}`);
   }
 
-  return config[chainId];
+  return chainsConfig[chainId];
 };
 
 // Bytes encoding

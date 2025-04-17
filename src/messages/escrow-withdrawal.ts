@@ -24,9 +24,9 @@ export type EscrowWithdrawalMessage = {
 
 export const getEscrowWithdrawalMessageHash = (
   message: EscrowWithdrawalMessage,
-  config: ChainIdToVmType
+  chainsConfig: ChainIdToVmType
 ) => {
-  const vmType = (chainId: number) => getChainVmType(chainId, config);
+  const vmType = (chainId: number) => getChainVmType(chainId, chainsConfig);
 
   return hashStruct({
     types: {

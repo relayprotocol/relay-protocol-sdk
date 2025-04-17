@@ -25,6 +25,15 @@ import {
   getSolverSuccessFillMessageHash,
 } from "./messages/solver-success-fill";
 
+import {
+  VmType,
+  decodeAddress,
+  decodeTransactionId,
+  encodeAddress,
+  encodeBytes,
+  encodeTransactionId,
+} from "./utils";
+
 export {
   // Order
   Order,
@@ -47,4 +56,12 @@ export {
   // SolverSuccessFill
   SolverSuccessFillMessage,
   getSolverSuccessFillMessageHash,
+
+  // Utils
+  VmType,
+  decodeAddress,
+  decodeTransactionId,
+  encodeAddress,
+  encodeBytes,
+  encodeTransactionId,
 };
