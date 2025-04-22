@@ -21,15 +21,15 @@ export type Order = {
     payment: {
       chainId: number;
       currency: string;
-      amount: bigint;
-      weight: bigint;
+      amount: string;
+      weight: string;
     };
     // - a list of refund options when the solver is unable to fulfill the request
     refunds: {
       chainId: number;
       recipient: string;
       currency: string;
-      minimumAmount: bigint;
+      minimumAmount: string;
       deadline: number;
       extraData: string;
     }[];
@@ -43,8 +43,8 @@ export type Order = {
     payments: {
       recipient: string;
       currency: string;
-      minimumAmount: bigint;
-      expectedAmount: bigint;
+      minimumAmount: string;
+      expectedAmount: string;
     }[];
     // - a list of calls to be executed (encoded based on the chain's vm type)
     calls: string[];
@@ -175,7 +175,7 @@ type DecodedCall = {
   call: {
     to: string;
     data: string;
-    value: bigint;
+    value: string;
   };
 };
 
@@ -193,7 +193,7 @@ export const decodeOrderCall = (call: string, vmType: VmType): DecodedCall => {
           call: {
             to: result[0].toLowerCase(),
             data: result[1].toLowerCase(),
-            value: result[2],
+            value: result[2].toString(),
           },
         };
       } catch {
