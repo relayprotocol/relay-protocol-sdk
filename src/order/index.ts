@@ -13,7 +13,7 @@ export type Order = {
   solver: string;
 
   // Random salt value to ensure order uniqueness
-  salt: bigint;
+  salt: string;
 
   // An order can have multiple inputs, each specifying:
   inputs: {
@@ -59,8 +59,8 @@ export type Order = {
     chainId: number;
     recipient: string;
     currency: string;
-    amount: bigint;
-    weight: bigint;
+    amount: string;
+    weight: string;
   }[];
 };
 
