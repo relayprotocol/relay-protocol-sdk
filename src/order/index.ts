@@ -9,8 +9,11 @@ import {
 } from "../utils";
 
 export type Order = {
-  // The ethereum-vm address of the solver given exclusive filling rights
-  solver: string;
+  // The wallet of the solver given exclusive filling rights (must be an ethereum-vm eoa)
+  solver: {
+    chainId: number;
+    address: string;
+  };
 
   // Random salt value to ensure order uniqueness
   salt: string;
@@ -66,11 +69,15 @@ export type Order = {
 
 export const ORDER_EIP712_TYPES = {
   Order: [
-    { name: "solver", type: "address" },
+    { name: "solver", type: "Solver" },
     { name: "salt", type: "uint256" },
     { name: "inputs", type: "Input[]" },
     { name: "output", type: "Output" },
     { name: "fees", type: "Fee[]" },
+  ],
+  Solver: [
+    { name: "chainId", type: "uint256" },
+    { name: "address", type: "address" },
   ],
   Input: [
     { name: "payment", type: "InputPayment" },
@@ -116,7 +123,10 @@ export const normalizeOrder = (order: Order, chainsConfig: ChainIdToVmType) => {
   const vmType = (chainId: number) => getChainVmType(chainId, chainsConfig);
 
   return {
-    solver: order.solver,
+    solver: {
+      chainId: order.solver.chainId,
+      address: order.solver.address,
+    },
     salt: order.salt,
     inputs: order.inputs.map((input) => ({
       payment: {
