@@ -8,7 +8,7 @@ import {
   getChainVmType,
 } from "../utils";
 
-export type SolverSuccessFillMessage = {
+export type SolverRefundMessage = {
   data: {
     order: Order;
     orderSignature: string;
@@ -17,24 +17,26 @@ export type SolverSuccessFillMessage = {
       onchainId: string;
       inputIndex: number;
     }[];
-    fill: {
+    refunds: {
       transactionId: string;
-    };
+      inputIndex: number;
+      refundIndex: number;
+    }[];
   };
   result: {
     isValid: boolean;
   };
 };
 
-export const getSolverSuccessFillMessageHash = (
-  message: SolverSuccessFillMessage,
+export const getSolverRefundMessageHash = (
+  message: SolverRefundMessage,
   chainsConfig: ChainIdToVmType
 ) => {
   const vmType = (chainId: number) => getChainVmType(chainId, chainsConfig);
 
   return hashStruct({
     types: {
-      SolverSuccessFill: [
+      SolverRefund: [
         { name: "data", type: "Data" },
         { name: "result", type: "Result" },
       ],
@@ -42,7 +44,7 @@ export const getSolverSuccessFillMessageHash = (
         { name: "order", type: "Order" },
         { name: "orderSignature", type: "bytes" },
         { name: "inputs", type: "Input[]" },
-        { name: "fill", type: "Fill" },
+        { name: "refunds", type: "Refund[]" },
       ],
       Result: [{ name: "isValid", type: "boolean" }],
       ...ORDER_EIP712_TYPES,
@@ -51,9 +53,13 @@ export const getSolverSuccessFillMessageHash = (
         { name: "onchainId", type: "bytes32" },
         { name: "inputIndex", type: "uint32" },
       ],
-      Fill: [{ name: "transactionId", type: "bytes" }],
+      Refund: [
+        { name: "transactionId", type: "bytes" },
+        { name: "inputIndex", type: "uint32" },
+        { name: "refundIndex", type: "uint32" },
+      ],
     },
-    primaryType: "SolverSuccessFill",
+    primaryType: "SolverRefund",
     data: {
       data: {
         order: normalizeOrder(message.data.order, chainsConfig),
@@ -66,12 +72,18 @@ export const getSolverSuccessFillMessageHash = (
           onchainId: input.onchainId,
           inputIndex: input.inputIndex,
         })),
-        fill: {
+        refunds: message.data.refunds.map((refund) => ({
           transactionId: encodeTransactionId(
-            message.data.fill.transactionId,
-            vmType(message.data.order.output.chainId)
+            refund.transactionId,
+            vmType(
+              message.data.order.inputs[refund.inputIndex].refunds[
+                refund.refundIndex
+              ].chainId
+            )
           ),
-        },
+          inputIndex: refund.inputIndex,
+          refundIndex: refund.refundIndex,
+        })),
       },
       result: {
         isValid: message.result.isValid,

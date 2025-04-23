@@ -16,14 +16,14 @@ import {
 } from "./messages/escrow-withdrawal";
 
 import {
-  SolverRefundFillMessage,
-  getSolverRefundFillMessageHash,
-} from "./messages/solver-refund-fill";
+  SolverRefundMessage,
+  getSolverRefundMessageHash,
+} from "./messages/solver-refund";
 
 import {
-  SolverSuccessFillMessage,
-  getSolverSuccessFillMessageHash,
-} from "./messages/solver-success-fill";
+  SolverFillMessage,
+  getSolverFillMessageHash,
+} from "./messages/solver-fill";
 
 import {
   VmType,
@@ -49,13 +49,13 @@ export {
   EscrowWithdrawalMessage,
   getEscrowWithdrawalMessageHash,
 
-  // SolverRefundFill
-  SolverRefundFillMessage,
-  getSolverRefundFillMessageHash,
+  // SolverRefund
+  SolverRefundMessage,
+  getSolverRefundMessageHash,
 
-  // SolverSuccessFill
-  SolverSuccessFillMessage,
-  getSolverSuccessFillMessageHash,
+  // SolverFill
+  SolverFillMessage,
+  getSolverFillMessageHash,
 
   // Utils
   VmType,
