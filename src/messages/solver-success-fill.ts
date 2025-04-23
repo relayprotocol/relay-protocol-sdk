@@ -13,7 +13,7 @@ export type SolverSuccessFillMessage = {
     order: Order;
     orderSignature: string;
     inputs: {
-      transactionId: string;
+      onchainId: string;
       inputIndex: number;
     }[];
     fill: {
@@ -46,7 +46,7 @@ export const getSolverSuccessFillMessageHash = (
       Result: [{ name: "isValid", type: "boolean" }],
       ...ORDER_EIP712_TYPES,
       Input: [
-        { name: "transactionId", type: "bytes" },
+        { name: "onchainId", type: "bytes32" },
         { name: "inputIndex", type: "uint32" },
       ],
       Fill: [{ name: "transactionId", type: "bytes" }],
@@ -57,10 +57,7 @@ export const getSolverSuccessFillMessageHash = (
         order: normalizeOrder(message.data.order, chainsConfig),
         orderSignature: encodeBytes(message.data.orderSignature),
         inputs: message.data.inputs.map((input) => ({
-          transactionId: encodeTransactionId(
-            input.transactionId,
-            vmType(message.data.order.inputs[input.inputIndex].payment.chainId)
-          ),
+          onchainId: input.onchainId,
           inputIndex: input.inputIndex,
         })),
         fill: {
