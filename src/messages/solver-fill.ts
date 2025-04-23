@@ -23,7 +23,7 @@ export type SolverFillMessage = {
   };
   result: {
     validated: boolean;
-    totalInputPaymentBpsDiff: number;
+    totalWeightedInputPaymentBpsDiff: number;
   };
 };
 
@@ -47,7 +47,7 @@ export const getSolverFillMessageHash = (
       ],
       Result: [
         { name: "validated", type: "boolean" },
-        { name: "totalInputPaymentBpsDiff", type: "uint256" },
+        { name: "totalWeightedInputPaymentBpsDiff", type: "uint256" },
       ],
       ...ORDER_EIP712_TYPES,
       Input: [
@@ -79,7 +79,8 @@ export const getSolverFillMessageHash = (
       },
       result: {
         validated: message.result.validated,
-        totalInputPaymentBpsDiff: message.result.totalInputPaymentBpsDiff,
+        totalWeightedInputPaymentBpsDiff:
+          message.result.totalWeightedInputPaymentBpsDiff,
       },
     },
   });
