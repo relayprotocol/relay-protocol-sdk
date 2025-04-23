@@ -23,7 +23,7 @@ export type SolverFillMessage = {
   };
   result: {
     validated: boolean;
-    totalWeightedInputPaymentBpsDiff: number;
+    totalWeightedInputPaymentBpsDiff: string;
   };
 };
 
