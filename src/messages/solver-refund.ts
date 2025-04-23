@@ -24,7 +24,8 @@ export type SolverRefundMessage = {
     }[];
   };
   result: {
-    isValid: boolean;
+    validated: boolean;
+    totalInputPaymentBpsDiff: string;
   };
 };
 
@@ -46,7 +47,10 @@ export const getSolverRefundMessageHash = (
         { name: "inputs", type: "Input[]" },
         { name: "refunds", type: "Refund[]" },
       ],
-      Result: [{ name: "isValid", type: "boolean" }],
+      Result: [
+        { name: "validated", type: "boolean" },
+        { name: "totalInputPaymentBpsDiff", type: "uint256" },
+      ],
       ...ORDER_EIP712_TYPES,
       Input: [
         { name: "transactionId", type: "bytes" },
@@ -86,7 +90,8 @@ export const getSolverRefundMessageHash = (
         })),
       },
       result: {
-        isValid: message.result.isValid,
+        validated: message.result.validated,
+        totalInputPaymentBpsDiff: message.result.totalInputPaymentBpsDiff,
       },
     },
   });
