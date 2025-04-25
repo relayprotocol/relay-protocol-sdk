@@ -64,7 +64,6 @@ export type Order = {
     currencyChainId: number;
     currencyAddress: string;
     amount: string;
-    weight: string;
   }[];
 };
 
@@ -117,7 +116,6 @@ export const ORDER_EIP712_TYPES = {
     { name: "currencyChainId", type: "uint256" },
     { name: "currencyAddress", type: "bytes" },
     { name: "amount", type: "uint256" },
-    { name: "weight", type: "uint256" },
   ],
 };
 
@@ -175,7 +173,6 @@ export const normalizeOrder = (order: Order, chainsConfig: ChainIdToVmType) => {
         fee.currencyAddress,
         vmType(fee.currencyChainId)
       ),
-      weight: fee.weight,
       amount: fee.amount,
     })),
   };
