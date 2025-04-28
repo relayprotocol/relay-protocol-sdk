@@ -9,14 +9,13 @@ import {
 } from "../utils";
 
 export type EscrowDepositMessage = {
-  onchainId: string;
   data: {
     chainId: number;
     transactionId: string;
   };
   result: {
+    onchainId: string;
     depositId: string;
-    escrow: string;
     depositor: string;
     currency: string;
     amount: string;
@@ -42,7 +41,6 @@ export const getEscrowDepositMessageHash = (
       ],
       Result: [
         { name: "depositId", type: "bytes32" },
-        { name: "escrow", type: "bytes" },
         { name: "depositor", type: "bytes" },
         { name: "currency", type: "bytes" },
         { name: "amount", type: "uint256" },
@@ -50,7 +48,6 @@ export const getEscrowDepositMessageHash = (
     },
     primaryType: "EscrowDeposit",
     data: {
-      onchainId: message.onchainId,
       data: {
         chainId: message.data.chainId,
         transactionId: encodeTransactionId(
@@ -59,11 +56,8 @@ export const getEscrowDepositMessageHash = (
         ),
       },
       result: {
+        onchainId: encodeBytes(message.result.onchainId),
         depositId: encodeBytes(message.result.depositId),
-        escrow: encodeAddress(
-          message.result.escrow,
-          vmType(message.data.chainId)
-        ),
         depositor: encodeAddress(
           message.result.depositor,
           vmType(message.data.chainId)

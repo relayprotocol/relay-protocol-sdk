@@ -8,17 +8,18 @@ import {
   getChainVmType,
 } from "../utils";
 
+export enum WithdrawalStatus {
+  PENDING = 0,
+  EXECUTED = 1,
+  EXPIRED = 2,
+}
+
 export type EscrowWithdrawalMessage = {
-  onchainId: string;
   data: {
-    chainId: number;
-    transactionId: string;
+    withdrawalData: string;
   };
   result: {
-    withdrawalId: string;
-    escrow: string;
-    currency: string;
-    amount: string;
+    status: WithdrawalStatus;
   };
 };
 
@@ -31,13 +32,13 @@ export const getEscrowWithdrawalMessageHash = (
   return hashStruct({
     types: {
       EscrowWithdrawal: [
-        { name: "onchainId", type: "bytes32" },
         { name: "data", type: "Data" },
         { name: "result", type: "Result" },
       ],
       Data: [
         { name: "chainId", type: "uint256" },
         { name: "transactionId", type: "bytes" },
+        { name: "withdrawalData", type: "bytes" },
       ],
       Result: [
         { name: "withdrawalId", type: "bytes32" },
@@ -48,13 +49,13 @@ export const getEscrowWithdrawalMessageHash = (
     },
     primaryType: "EscrowWithdrawal",
     data: {
-      onchainId: message.onchainId,
       data: {
         chainId: message.data.chainId,
         transactionId: encodeTransactionId(
           message.data.transactionId,
           vmType(message.data.chainId)
         ),
+        withdrawalData: encodeBytes(message.data.withdrawalData),
       },
       result: {
         withdrawalId: encodeBytes(message.result.withdrawalId),
