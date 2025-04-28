@@ -1,14 +1,8 @@
 import { hashStruct } from "viem";
 
-import {
-  ChainIdToVmType,
-  encodeAddress,
-  encodeBytes,
-  encodeTransactionId,
-  getChainVmType,
-} from "../utils";
+import { encodeBytes } from "../utils";
 
-export enum WithdrawalStatus {
+export enum EscrowWithdrawalStatus {
   PENDING = 0,
   EXECUTED = 1,
   EXPIRED = 2,
@@ -16,19 +10,17 @@ export enum WithdrawalStatus {
 
 export type EscrowWithdrawalMessage = {
   data: {
-    withdrawalData: string;
+    chainId: number;
+    withdrawal: string;
   };
   result: {
-    status: WithdrawalStatus;
+    status: number;
   };
 };
 
 export const getEscrowWithdrawalMessageHash = (
-  message: EscrowWithdrawalMessage,
-  chainsConfig: ChainIdToVmType
+  message: EscrowWithdrawalMessage
 ) => {
-  const vmType = (chainId: number) => getChainVmType(chainId, chainsConfig);
-
   return hashStruct({
     types: {
       EscrowWithdrawal: [
@@ -37,37 +29,18 @@ export const getEscrowWithdrawalMessageHash = (
       ],
       Data: [
         { name: "chainId", type: "uint256" },
-        { name: "transactionId", type: "bytes" },
-        { name: "withdrawalData", type: "bytes" },
+        { name: "withdrawal", type: "bytes" },
       ],
-      Result: [
-        { name: "withdrawalId", type: "bytes32" },
-        { name: "escrow", type: "bytes" },
-        { name: "currency", type: "bytes" },
-        { name: "amount", type: "uint256" },
-      ],
+      Result: [{ name: "status", type: "uint8" }],
     },
     primaryType: "EscrowWithdrawal",
     data: {
       data: {
         chainId: message.data.chainId,
-        transactionId: encodeTransactionId(
-          message.data.transactionId,
-          vmType(message.data.chainId)
-        ),
-        withdrawalData: encodeBytes(message.data.withdrawalData),
+        withdrawal: encodeBytes(message.data.withdrawal),
       },
       result: {
-        withdrawalId: encodeBytes(message.result.withdrawalId),
-        escrow: encodeAddress(
-          message.result.escrow,
-          vmType(message.data.chainId)
-        ),
-        currency: encodeAddress(
-          message.result.currency,
-          vmType(message.data.chainId)
-        ),
-        amount: message.result.amount,
+        status: message.result.status,
       },
     },
   });

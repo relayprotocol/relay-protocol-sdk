@@ -31,7 +31,6 @@ export const getEscrowDepositMessageHash = (
   return hashStruct({
     types: {
       EscrowDeposit: [
-        { name: "onchainId", type: "bytes32" },
         { name: "data", type: "Data" },
         { name: "result", type: "Result" },
       ],
@@ -40,6 +39,7 @@ export const getEscrowDepositMessageHash = (
         { name: "transactionId", type: "bytes" },
       ],
       Result: [
+        { name: "onchainId", type: "bytes32" },
         { name: "depositId", type: "bytes32" },
         { name: "depositor", type: "bytes" },
         { name: "currency", type: "bytes" },

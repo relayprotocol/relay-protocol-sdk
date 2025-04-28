@@ -12,6 +12,7 @@ import {
 
 import {
   EscrowWithdrawalMessage,
+  EscrowWithdrawalStatus,
   getEscrowWithdrawalMessageHash,
 } from "./messages/escrow-withdrawal";
 
@@ -47,6 +48,7 @@ export {
 
   // EscrowWithdrawal
   EscrowWithdrawalMessage,
+  EscrowWithdrawalStatus,
   getEscrowWithdrawalMessageHash,
 
   // SolverRefund
