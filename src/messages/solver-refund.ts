@@ -8,6 +8,11 @@ import {
   getChainVmType,
 } from "../utils";
 
+export enum SolverRefundStatus {
+  FAILED = 0,
+  SUCCESSFUL = 1,
+}
+
 export type SolverRefundMessage = {
   data: {
     order: Order;
@@ -25,7 +30,7 @@ export type SolverRefundMessage = {
   };
   result: {
     orderId: string;
-    validated: boolean;
+    status: SolverRefundStatus;
     totalWeightedInputPaymentBpsDiff: string;
   };
 };
@@ -50,7 +55,7 @@ export const getSolverRefundMessageId = (
       ],
       Result: [
         { name: "orderId", type: "bytes32" },
-        { name: "validated", type: "boolean" },
+        { name: "status", type: "uint8" },
         { name: "totalWeightedInputPaymentBpsDiff", type: "uint256" },
       ],
       ...ORDER_EIP712_TYPES,
@@ -93,7 +98,7 @@ export const getSolverRefundMessageId = (
       },
       result: {
         orderId: message.result.orderId,
-        validated: message.result.validated,
+        status: message.result.status,
         totalWeightedInputPaymentBpsDiff:
           message.result.totalWeightedInputPaymentBpsDiff,
       },

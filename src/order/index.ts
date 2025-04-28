@@ -1,4 +1,4 @@
-import { decodeAbiParameters, hashStruct, Hex } from "viem";
+import { decodeAbiParameters, hashStruct, Hex, parseAbiParameters } from "viem";
 
 import {
   ChainIdToVmType,
@@ -200,16 +200,20 @@ export const decodeOrderCall = (call: string, vmType: VmType): DecodedCall => {
     case "ethereum-vm": {
       try {
         const result = decodeAbiParameters(
-          [{ type: "address" }, { type: "bytes" }, { type: "uint256" }],
+          parseAbiParameters([
+            "(address to)",
+            "(bytes data)",
+            "(uint256 value)",
+          ]),
           call as Hex
         );
 
         return {
           vmType: "ethereum-vm",
           call: {
-            to: result[0].toLowerCase(),
-            data: result[1].toLowerCase(),
-            value: result[2].toString(),
+            to: result[0].to.toLowerCase(),
+            data: result[1].data.toLowerCase(),
+            value: result[2].value.toString(),
           },
         };
       } catch {
@@ -237,14 +241,14 @@ export const decodeOrderExtraData = (
     case "ethereum-vm": {
       try {
         const result = decodeAbiParameters(
-          [{ type: "address" }],
+          parseAbiParameters(["(address fillContract)"]),
           extraData as Hex
         );
 
         return {
           vmType: "ethereum-vm",
           extraData: {
-            fillContract: result[0].toLowerCase(),
+            fillContract: result[0].fillContract.toLowerCase(),
           },
         };
       } catch {

@@ -14,15 +14,19 @@ import {
   EscrowWithdrawalMessage,
   EscrowWithdrawalStatus,
   getEscrowWithdrawalMessageId,
+  getDecodedWithdrawalId,
+  decodeWithdrawal,
 } from "./messages/escrow-withdrawal";
 
 import {
   SolverRefundMessage,
+  SolverRefundStatus,
   getSolverRefundMessageId,
 } from "./messages/solver-refund";
 
 import {
   SolverFillMessage,
+  SolverFillStatus,
   getSolverFillMessageId,
 } from "./messages/solver-fill";
 
@@ -50,13 +54,17 @@ export {
   EscrowWithdrawalMessage,
   EscrowWithdrawalStatus,
   getEscrowWithdrawalMessageId,
+  getDecodedWithdrawalId,
+  decodeWithdrawal,
 
   // SolverRefund
   SolverRefundMessage,
+  SolverRefundStatus,
   getSolverRefundMessageId,
 
   // SolverFill
   SolverFillMessage,
+  SolverFillStatus,
   getSolverFillMessageId,
 
   // Utils
