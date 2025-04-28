@@ -1,6 +1,6 @@
 {
   "name": "@reservoir0x/relay-protocol-sdk",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "Relay protocol SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,6 +13,7 @@
     "prepublishOnly": "yarn clean && yarn build"
   },
   "devDependencies": {
+    "@types/node": "^22.15.3",
     "typescript": "^5.5.4"
   },
   "dependencies": {
