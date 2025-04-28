@@ -22,12 +22,13 @@ export type SolverFillMessage = {
     };
   };
   result: {
+    orderId: string;
     validated: boolean;
     totalWeightedInputPaymentBpsDiff: string;
   };
 };
 
-export const getSolverFillMessageHash = (
+export const getSolverFillMessageId = (
   message: SolverFillMessage,
   chainsConfig: ChainIdToVmType
 ) => {
@@ -46,6 +47,7 @@ export const getSolverFillMessageHash = (
         { name: "fill", type: "Fill" },
       ],
       Result: [
+        { name: "orderId", type: "bytes32" },
         { name: "validated", type: "boolean" },
         { name: "totalWeightedInputPaymentBpsDiff", type: "uint256" },
       ],
@@ -78,6 +80,7 @@ export const getSolverFillMessageHash = (
         },
       },
       result: {
+        orderId: message.result.orderId,
         validated: message.result.validated,
         totalWeightedInputPaymentBpsDiff:
           message.result.totalWeightedInputPaymentBpsDiff,

@@ -14,11 +14,12 @@ export type EscrowWithdrawalMessage = {
     withdrawal: string;
   };
   result: {
-    status: number;
+    withdrawalId: string;
+    status: EscrowWithdrawalStatus;
   };
 };
 
-export const getEscrowWithdrawalMessageHash = (
+export const getEscrowWithdrawalMessageId = (
   message: EscrowWithdrawalMessage
 ) => {
   return hashStruct({
@@ -31,7 +32,10 @@ export const getEscrowWithdrawalMessageHash = (
         { name: "chainId", type: "uint256" },
         { name: "withdrawal", type: "bytes" },
       ],
-      Result: [{ name: "status", type: "uint8" }],
+      Result: [
+        { name: "withdrawalId", type: "bytes32" },
+        { name: "status", type: "uint8" },
+      ],
     },
     primaryType: "EscrowWithdrawal",
     data: {
@@ -40,6 +44,7 @@ export const getEscrowWithdrawalMessageHash = (
         withdrawal: encodeBytes(message.data.withdrawal),
       },
       result: {
+        withdrawalId: message.result.withdrawalId,
         status: message.result.status,
       },
     },

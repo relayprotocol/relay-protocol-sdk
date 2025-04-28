@@ -2,28 +2,28 @@ import {
   Order,
   decodeOrderCall,
   decodeOrderExtraData,
-  getOrderHash,
+  getOrderId,
 } from "./order";
 
 import {
   EscrowDepositMessage,
-  getEscrowDepositMessageHash,
+  getEscrowDepositMessageId,
 } from "./messages/escrow-deposit";
 
 import {
   EscrowWithdrawalMessage,
   EscrowWithdrawalStatus,
-  getEscrowWithdrawalMessageHash,
+  getEscrowWithdrawalMessageId,
 } from "./messages/escrow-withdrawal";
 
 import {
   SolverRefundMessage,
-  getSolverRefundMessageHash,
+  getSolverRefundMessageId,
 } from "./messages/solver-refund";
 
 import {
   SolverFillMessage,
-  getSolverFillMessageHash,
+  getSolverFillMessageId,
 } from "./messages/solver-fill";
 
 import {
@@ -40,24 +40,24 @@ export {
   Order,
   decodeOrderCall,
   decodeOrderExtraData,
-  getOrderHash,
+  getOrderId,
 
   // EscrowDeposit
   EscrowDepositMessage,
-  getEscrowDepositMessageHash,
+  getEscrowDepositMessageId,
 
   // EscrowWithdrawal
   EscrowWithdrawalMessage,
   EscrowWithdrawalStatus,
-  getEscrowWithdrawalMessageHash,
+  getEscrowWithdrawalMessageId,
 
   // SolverRefund
   SolverRefundMessage,
-  getSolverRefundMessageHash,
+  getSolverRefundMessageId,
 
   // SolverFill
   SolverFillMessage,
-  getSolverFillMessageHash,
+  getSolverFillMessageId,
 
   // Utils
   VmType,

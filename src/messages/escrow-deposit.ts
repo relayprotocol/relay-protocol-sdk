@@ -22,7 +22,7 @@ export type EscrowDepositMessage = {
   };
 };
 
-export const getEscrowDepositMessageHash = (
+export const getEscrowDepositMessageId = (
   message: EscrowDepositMessage,
   chainsConfig: ChainIdToVmType
 ) => {

@@ -24,12 +24,13 @@ export type SolverRefundMessage = {
     }[];
   };
   result: {
+    orderId: string;
     validated: boolean;
     totalWeightedInputPaymentBpsDiff: string;
   };
 };
 
-export const getSolverRefundMessageHash = (
+export const getSolverRefundMessageId = (
   message: SolverRefundMessage,
   chainsConfig: ChainIdToVmType
 ) => {
@@ -48,6 +49,7 @@ export const getSolverRefundMessageHash = (
         { name: "refunds", type: "Refund[]" },
       ],
       Result: [
+        { name: "orderId", type: "bytes32" },
         { name: "validated", type: "boolean" },
         { name: "totalWeightedInputPaymentBpsDiff", type: "uint256" },
       ],
@@ -90,6 +92,7 @@ export const getSolverRefundMessageHash = (
         })),
       },
       result: {
+        orderId: message.result.orderId,
         validated: message.result.validated,
         totalWeightedInputPaymentBpsDiff:
           message.result.totalWeightedInputPaymentBpsDiff,

@@ -178,7 +178,7 @@ export const normalizeOrder = (order: Order, chainsConfig: ChainIdToVmType) => {
   };
 };
 
-export const getOrderHash = (order: Order, config: ChainIdToVmType) => {
+export const getOrderId = (order: Order, config: ChainIdToVmType) => {
   return hashStruct({
     types: ORDER_EIP712_TYPES,
     primaryType: "Order",
