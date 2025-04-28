@@ -16,6 +16,8 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
+    "@ton/core": "^0.60.1",
+    "bs58": "^6.0.0",
     "viem": "^2.26.3"
   },
   "files": [
