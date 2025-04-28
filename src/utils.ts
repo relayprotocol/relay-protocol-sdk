@@ -1,4 +1,6 @@
 import { bytesToHex, Hex, hexToBytes } from "viem";
+import bs58 from "bs58";
+import { Address } from "@ton/core";
 
 export type VmType =
   | "ethereum-vm"
@@ -28,8 +30,17 @@ export const encodeBytes = (bytes: string) => hexToBytes(bytes as Hex);
 
 export const encodeAddress = (address: string, vmType: VmType): Uint8Array => {
   switch (vmType) {
+    case "sui-vm":
     case "ethereum-vm": {
       return hexToBytes(address as Hex);
+    }
+
+    case "solana-vm": {
+      return bs58.decode(address);
+    }
+
+    case "ton-vm": {
+      return Address.parse(address).toRaw();
     }
 
     default: {
@@ -40,8 +51,20 @@ export const encodeAddress = (address: string, vmType: VmType): Uint8Array => {
 
 export const decodeAddress = (address: Uint8Array, vmType: VmType): string => {
   switch (vmType) {
+    case "sui-vm":
     case "ethereum-vm": {
       return bytesToHex(address);
+    }
+
+    case "solana-vm": {
+      return bs58.encode(address);
+    }
+
+    case "ton-vm": {
+      const buf = Buffer.from(address);
+      const hash = buf.subarray(0, 32);
+      const workchain = buf[32];
+      return new Address(workchain, hash).toString();
     }
 
     default: {
@@ -61,6 +84,10 @@ export const encodeTransactionId = (
       return hexToBytes(transactionId as Hex);
     }
 
+    case "solana-vm": {
+      return bs58.decode(transactionId);
+    }
+
     default: {
       throw new Error("Vm type not implemented");
     }
@@ -74,6 +101,10 @@ export const decodeTransactionId = (
   switch (vmType) {
     case "ethereum-vm": {
       return bytesToHex(transactionId);
+    }
+
+    case "solana-vm": {
+      return bs58.encode(transactionId);
     }
 
     default: {
