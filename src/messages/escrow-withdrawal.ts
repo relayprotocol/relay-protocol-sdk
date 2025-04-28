@@ -1,6 +1,15 @@
-import { decodeAbiParameters, hashStruct, Hex, parseAbiParameters } from "viem";
+import {
+  Address,
+  decodeAbiParameters,
+  encodeAbiParameters,
+  hashStruct,
+  Hex,
+  parseAbiParameters,
+} from "viem";
 
 import { encodeBytes, VmType } from "../utils";
+
+// Main message
 
 export enum EscrowWithdrawalStatus {
   PENDING = 0,
@@ -19,6 +28,40 @@ export type EscrowWithdrawalMessage = {
   };
 };
 
+export const getEscrowWithdrawalMessageId = (
+  message: EscrowWithdrawalMessage
+) => {
+  return hashStruct({
+    types: {
+      EscrowWithdrawal: [
+        { name: "data", type: "Data" },
+        { name: "result", type: "Result" },
+      ],
+      Data: [
+        { name: "chainId", type: "uint256" },
+        { name: "withdrawal", type: "bytes" },
+      ],
+      Result: [
+        { name: "withdrawalId", type: "bytes32" },
+        { name: "status", type: "uint8" },
+      ],
+    },
+    primaryType: "EscrowWithdrawal",
+    data: {
+      data: {
+        chainId: message.data.chainId,
+        withdrawal: encodeBytes(message.data.withdrawal),
+      },
+      result: {
+        withdrawalId: message.result.withdrawalId,
+        status: message.result.status,
+      },
+    },
+  });
+};
+
+// Encoding / decoding utilities
+
 type DecodedWithdrawal = {
   vmType: "ethereum-vm";
   withdrawal: {
@@ -31,6 +74,76 @@ type DecodedWithdrawal = {
     nonce: string;
     expiration: number;
   };
+};
+
+export const encodeWithdrawal = (
+  decodedWithdrawal: DecodedWithdrawal
+): string => {
+  switch (decodedWithdrawal.vmType) {
+    case "ethereum-vm": {
+      try {
+        return encodeAbiParameters(
+          parseAbiParameters([
+            "((address to, bytes data, uint256 value, bool allowFailure)[] calls, uint256 nonce, uint256 expiration)",
+          ]),
+          [
+            {
+              calls: decodedWithdrawal.withdrawal.calls.map((call) => ({
+                to: call.to as Address,
+                data: call.data as Hex,
+                value: BigInt(call.value),
+                allowFailure: call.allowFailure,
+              })),
+              nonce: BigInt(decodedWithdrawal.withdrawal.nonce),
+              expiration: BigInt(decodedWithdrawal.withdrawal.expiration),
+            },
+          ]
+        );
+      } catch {
+        throw new Error("Failed to encode withdrawal");
+      }
+    }
+
+    default:
+      throw new Error("Unsupported vm type");
+  }
+};
+
+export const decodeWithdrawal = (
+  encodedWithdrawal: string,
+  vmType: VmType
+): DecodedWithdrawal => {
+  switch (vmType) {
+    case "ethereum-vm": {
+      try {
+        const result = decodeAbiParameters(
+          parseAbiParameters([
+            "((address to, bytes data, uint256 value, bool allowFailure)[] calls, uint256 nonce, uint256 expiration)",
+          ]),
+          encodedWithdrawal as Hex
+        );
+
+        return {
+          vmType: "ethereum-vm",
+          withdrawal: {
+            calls: result[0].calls.map((call) => ({
+              to: call.to.toLowerCase(),
+              data: call.data.toLowerCase(),
+              value: call.value.toString(),
+              allowFailure: call.allowFailure,
+            })),
+            nonce: result[0].nonce.toString(),
+            expiration: Number(result[0].expiration.toString()),
+          },
+        };
+      } catch {
+        throw new Error("Failed to decode withdrawal");
+      }
+    }
+
+    default:
+      throw new Error("Unsupported vm type");
+  }
 };
 
 export const getDecodedWithdrawalId = (
@@ -64,73 +177,4 @@ export const getDecodedWithdrawalId = (
     default:
       throw new Error("Unsupported vm type");
   }
-};
-
-export const decodeWithdrawal = (
-  withdrawal: string,
-  vmType: VmType
-): DecodedWithdrawal => {
-  switch (vmType) {
-    case "ethereum-vm": {
-      try {
-        const result = decodeAbiParameters(
-          parseAbiParameters([
-            "((address to, bytes data, uint256 value, bool allowFailure)[] calls, uint256 nonce, uint256 expiration)",
-          ]),
-          withdrawal as Hex
-        );
-
-        return {
-          vmType: "ethereum-vm",
-          withdrawal: {
-            calls: result[0].calls.map((call) => ({
-              to: call.to.toLowerCase(),
-              data: call.data.toLowerCase(),
-              value: call.value.toString(),
-              allowFailure: call.allowFailure,
-            })),
-            nonce: result[0].nonce.toString(),
-            expiration: Number(result[0].expiration.toString()),
-          },
-        };
-      } catch {
-        throw new Error("Failed to decode withdrawal");
-      }
-    }
-
-    default:
-      throw new Error("Unsupported vm type");
-  }
-};
-
-export const getEscrowWithdrawalMessageId = (
-  message: EscrowWithdrawalMessage
-) => {
-  return hashStruct({
-    types: {
-      EscrowWithdrawal: [
-        { name: "data", type: "Data" },
-        { name: "result", type: "Result" },
-      ],
-      Data: [
-        { name: "chainId", type: "uint256" },
-        { name: "withdrawal", type: "bytes" },
-      ],
-      Result: [
-        { name: "withdrawalId", type: "bytes32" },
-        { name: "status", type: "uint8" },
-      ],
-    },
-    primaryType: "EscrowWithdrawal",
-    data: {
-      data: {
-        chainId: message.data.chainId,
-        withdrawal: encodeBytes(message.data.withdrawal),
-      },
-      result: {
-        withdrawalId: message.result.withdrawalId,
-        status: message.result.status,
-      },
-    },
-  });
 };

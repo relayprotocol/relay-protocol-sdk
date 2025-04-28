@@ -14,8 +14,9 @@ import {
   EscrowWithdrawalMessage,
   EscrowWithdrawalStatus,
   getEscrowWithdrawalMessageId,
-  getDecodedWithdrawalId,
+  encodeWithdrawal,
   decodeWithdrawal,
+  getDecodedWithdrawalId,
 } from "./messages/escrow-withdrawal";
 
 import {
@@ -54,8 +55,9 @@ export {
   EscrowWithdrawalMessage,
   EscrowWithdrawalStatus,
   getEscrowWithdrawalMessageId,
-  getDecodedWithdrawalId,
+  encodeWithdrawal,
   decodeWithdrawal,
+  getDecodedWithdrawalId,
 
   // SolverRefund
   SolverRefundMessage,
