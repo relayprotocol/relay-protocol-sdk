@@ -60,9 +60,9 @@ export type Order = {
   // An order can specify hub fees to be paid on successful fill
   fees: {
     recipientChainId: number;
-    recipientAddress: string;
+    recipient: string;
     currencyChainId: number;
-    currencyAddress: string;
+    currency: string;
     amount: string;
   }[];
 };
@@ -112,9 +112,9 @@ export const ORDER_EIP712_TYPES = {
   ],
   Fee: [
     { name: "recipientChainId", type: "uint256" },
-    { name: "recipientAddress", type: "bytes" },
+    { name: "recipient", type: "bytes" },
     { name: "currencyChainId", type: "uint256" },
-    { name: "currencyAddress", type: "bytes" },
+    { name: "currency", type: "bytes" },
     { name: "amount", type: "uint256" },
   ],
 };
@@ -164,15 +164,9 @@ export const normalizeOrder = (order: Order, chainsConfig: ChainIdToVmType) => {
     },
     fees: order.fees.map((fee) => ({
       recipientChainId: fee.recipientChainId,
-      recipientAddress: encodeAddress(
-        fee.recipientAddress,
-        vmType(fee.recipientChainId)
-      ),
+      recipient: encodeAddress(fee.recipient, vmType(fee.recipientChainId)),
       currencyChainId: fee.currencyChainId,
-      currencyAddress: encodeAddress(
-        fee.currencyAddress,
-        vmType(fee.currencyChainId)
-      ),
+      currency: encodeAddress(fee.currency, vmType(fee.currencyChainId)),
       amount: fee.amount,
     })),
   };
