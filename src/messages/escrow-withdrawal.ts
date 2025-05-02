@@ -7,7 +7,13 @@ import {
   parseAbiParameters,
 } from "viem";
 
-import { encodeBytes, VmType } from "../utils";
+import {
+  ChainIdToVmType,
+  encodeAddress,
+  encodeBytes,
+  getChainVmType,
+  VmType,
+} from "../utils";
 
 // Main message
 
@@ -24,13 +30,17 @@ export type EscrowWithdrawalMessage = {
   };
   result: {
     withdrawalId: string;
+    escrow: string;
     status: EscrowWithdrawalStatus;
   };
 };
 
 export const getEscrowWithdrawalMessageId = (
-  message: EscrowWithdrawalMessage
+  message: EscrowWithdrawalMessage,
+  chainsConfig: ChainIdToVmType
 ) => {
+  const vmType = (chainId: string) => getChainVmType(chainId, chainsConfig);
+
   return hashStruct({
     types: {
       EscrowWithdrawal: [
@@ -43,6 +53,7 @@ export const getEscrowWithdrawalMessageId = (
       ],
       Result: [
         { name: "withdrawalId", type: "bytes32" },
+        { name: "escrow", type: "bytes" },
         { name: "status", type: "uint8" },
       ],
     },
@@ -54,6 +65,10 @@ export const getEscrowWithdrawalMessageId = (
       },
       result: {
         withdrawalId: message.result.withdrawalId,
+        escrow: encodeAddress(
+          message.result.escrow,
+          vmType(message.data.chainId)
+        ),
         status: message.result.status,
       },
     },

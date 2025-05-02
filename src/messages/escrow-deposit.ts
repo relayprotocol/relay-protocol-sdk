@@ -15,6 +15,7 @@ export type EscrowDepositMessage = {
   };
   result: {
     onchainId: string;
+    escrow: string;
     depositId: string;
     depositor: string;
     currency: string;
@@ -40,6 +41,7 @@ export const getEscrowDepositMessageId = (
       ],
       Result: [
         { name: "onchainId", type: "bytes32" },
+        { name: "escrow", type: "bytes" },
         { name: "depositId", type: "bytes32" },
         { name: "depositor", type: "bytes" },
         { name: "currency", type: "bytes" },
@@ -57,6 +59,10 @@ export const getEscrowDepositMessageId = (
       },
       result: {
         onchainId: encodeBytes(message.result.onchainId),
+        escrow: encodeAddress(
+          message.result.escrow,
+          vmType(message.data.chainId)
+        ),
         depositId: encodeBytes(message.result.depositId),
         depositor: encodeAddress(
           message.result.depositor,
