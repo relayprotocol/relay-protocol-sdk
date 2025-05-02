@@ -10,7 +10,7 @@ import {
 
 export type EscrowDepositMessage = {
   data: {
-    chainId: number;
+    chainId: string;
     transactionId: string;
   };
   result: {
@@ -26,7 +26,7 @@ export const getEscrowDepositMessageId = (
   message: EscrowDepositMessage,
   chainsConfig: ChainIdToVmType
 ) => {
-  const vmType = (chainId: number) => getChainVmType(chainId, chainsConfig);
+  const vmType = (chainId: string) => getChainVmType(chainId, chainsConfig);
 
   return hashStruct({
     types: {
@@ -35,7 +35,7 @@ export const getEscrowDepositMessageId = (
         { name: "result", type: "Result" },
       ],
       Data: [
-        { name: "chainId", type: "uint256" },
+        { name: "chainId", type: "string" },
         { name: "transactionId", type: "bytes" },
       ],
       Result: [

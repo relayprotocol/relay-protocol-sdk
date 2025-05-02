@@ -19,7 +19,7 @@ export enum EscrowWithdrawalStatus {
 
 export type EscrowWithdrawalMessage = {
   data: {
-    chainId: number;
+    chainId: string;
     withdrawal: string;
   };
   result: {
@@ -38,7 +38,7 @@ export const getEscrowWithdrawalMessageId = (
         { name: "result", type: "Result" },
       ],
       Data: [
-        { name: "chainId", type: "uint256" },
+        { name: "chainId", type: "string" },
         { name: "withdrawal", type: "bytes" },
       ],
       Result: [

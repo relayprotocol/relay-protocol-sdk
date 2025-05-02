@@ -37,7 +37,7 @@ export const getSolverFillMessageId = (
   message: SolverFillMessage,
   chainsConfig: ChainIdToVmType
 ) => {
-  const vmType = (chainId: number) => getChainVmType(chainId, chainsConfig);
+  const vmType = (chainId: string) => getChainVmType(chainId, chainsConfig);
 
   return hashStruct({
     types: {

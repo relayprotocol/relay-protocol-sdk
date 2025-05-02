@@ -9,10 +9,10 @@ export type VmType =
   | "ton-vm"
   | "sui-vm";
 
-export type ChainIdToVmType = Record<number, VmType>;
+export type ChainIdToVmType = Record<string, VmType>;
 
 export const getChainVmType = (
-  chainId: number,
+  chainId: string,
   chainsConfig: ChainIdToVmType
 ) => {
   if (!chainsConfig[chainId]) {

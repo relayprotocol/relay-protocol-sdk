@@ -10,7 +10,7 @@ import {
 
 export type Order = {
   // The chain id and address of the solver given exclusive filling rights (must be an ethereum-vm eoa)
-  solverChainId: number;
+  solverChainId: string;
   solver: string;
 
   // Random salt value to ensure order uniqueness
@@ -20,14 +20,14 @@ export type Order = {
   inputs: {
     // - the input payment details
     payment: {
-      chainId: number;
+      chainId: string;
       currency: string;
       amount: string;
       weight: string;
     };
     // - a list of refund options when the solver is unable to fulfill the request
     refunds: {
-      chainId: number;
+      chainId: string;
       recipient: string;
       currency: string;
       minimumAmount: string;
@@ -39,7 +39,7 @@ export type Order = {
   // An order can have a single output, specifying:
   output: {
     // - the chain id of the output fill
-    chainId: number;
+    chainId: string;
     // - the output payments details
     payments: {
       recipient: string;
@@ -57,9 +57,9 @@ export type Order = {
 
   // An order can specify hub fees to be paid on successful fill
   fees: {
-    recipientChainId: number;
+    recipientChainId: string;
     recipient: string;
-    currencyChainId: number;
+    currencyChainId: string;
     currency: string;
     amount: string;
   }[];
@@ -67,7 +67,7 @@ export type Order = {
 
 export const ORDER_EIP712_TYPES = {
   Order: [
-    { name: "solverChainId", type: "uint256" },
+    { name: "solverChainId", type: "string" },
     { name: "solver", type: "address" },
     { name: "salt", type: "uint256" },
     { name: "inputs", type: "Input[]" },
@@ -79,13 +79,13 @@ export const ORDER_EIP712_TYPES = {
     { name: "refunds", type: "InputRefund[]" },
   ],
   InputPayment: [
-    { name: "chainId", type: "uint256" },
+    { name: "chainId", type: "string" },
     { name: "currency", type: "bytes" },
     { name: "amount", type: "uint256" },
     { name: "weight", type: "uint256" },
   ],
   InputRefund: [
-    { name: "chainId", type: "uint256" },
+    { name: "chainId", type: "string" },
     { name: "recipient", type: "bytes" },
     { name: "currency", type: "bytes" },
     { name: "minimumAmount", type: "uint256" },
@@ -93,7 +93,7 @@ export const ORDER_EIP712_TYPES = {
     { name: "extraData", type: "bytes" },
   ],
   Output: [
-    { name: "chainId", type: "uint256" },
+    { name: "chainId", type: "string" },
     { name: "payments", type: "OutputPayment[]" },
     { name: "deadline", type: "uint32" },
     { name: "calls", type: "bytes[]" },
@@ -106,16 +106,16 @@ export const ORDER_EIP712_TYPES = {
     { name: "expectedAmount", type: "uint256" },
   ],
   Fee: [
-    { name: "recipientChainId", type: "uint256" },
+    { name: "recipientChainId", type: "string" },
     { name: "recipient", type: "bytes" },
-    { name: "currencyChainId", type: "uint256" },
+    { name: "currencyChainId", type: "string" },
     { name: "currency", type: "bytes" },
     { name: "amount", type: "uint256" },
   ],
 };
 
 export const normalizeOrder = (order: Order, chainsConfig: ChainIdToVmType) => {
-  const vmType = (chainId: number) => getChainVmType(chainId, chainsConfig);
+  const vmType = (chainId: string) => getChainVmType(chainId, chainsConfig);
 
   return {
     solverChainId: order.solverChainId,
