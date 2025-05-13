@@ -19,6 +19,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { BorshCoder, Idl } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
 import { sha256 } from 'js-sha256';
+import { bcs } from "@mysten/sui/bcs";
 
 // Main message
 
@@ -109,7 +110,18 @@ export interface DecodedSolanaWithdrawal {
   };
 }
 
-type DecodedWithdrawal = DecodedEvmWithdrawal | DecodedSolanaWithdrawal;
+export interface DecodedSuiWithdrawal {
+  vmType: "sui-vm";
+  withdrawal: {
+    recipient: string;
+    coinType: string;
+    amount: string;
+    nonce: string;
+    expiration: number;
+  };
+}
+
+type DecodedWithdrawal = DecodedEvmWithdrawal | DecodedSolanaWithdrawal | DecodedSuiWithdrawal;
 
 const createSolanaWithdrawalRequest = (withdrawal: DecodedSolanaWithdrawal['withdrawal']) => {
   return {
@@ -126,6 +138,29 @@ const encodeSolanaWithdrawal = (withdrawal: DecodedSolanaWithdrawal['withdrawal'
   return solanaWithdrawalCoder.types.encode('TransferRequest', request);
 };
 
+// Sui related utilities
+const SuiTransferRequestStruct = bcs.struct('TransferRequest', {
+  recipient: bcs.Address,
+  amount: bcs.u64(),
+  coin_type: bcs.struct('TypeName', {
+      name: bcs.string(),
+  }),
+  nonce: bcs.u64(),
+  expiration: bcs.u64()
+});
+
+const encodeSuiWithdrawal = (withdrawal: DecodedSuiWithdrawal['withdrawal']) => {
+  const request = {
+    recipient: withdrawal.recipient,
+    amount: BigInt(withdrawal.amount),
+    coin_type: {
+      name: withdrawal.coinType
+    },
+    nonce: BigInt(withdrawal.nonce),
+    expiration: BigInt(withdrawal.expiration)
+  };
+  return SuiTransferRequestStruct.serialize(request).toBytes();
+};
 
 export const encodeWithdrawal = (
   decodedWithdrawal: DecodedWithdrawal
@@ -159,6 +194,15 @@ export const encodeWithdrawal = (
       try {
         const message = encodeSolanaWithdrawal(decodedWithdrawal.withdrawal);
         return '0x'+message.toString('hex');
+      } catch {
+        throw new Error("Failed to encode withdrawal");
+      }
+    }
+
+    case "sui-vm": {
+      try {
+        const message = encodeSuiWithdrawal(decodedWithdrawal.withdrawal);
+        return '0x'+Buffer.from(message).toString('hex');
       } catch {
         throw new Error("Failed to encode withdrawal");
       }
@@ -203,7 +247,7 @@ export const decodeWithdrawal = (
 
     case "solana-vm": {
       try {
-        const buffer = Buffer.from(encodedWithdrawal, "hex");
+        const buffer = Buffer.from(encodedWithdrawal.substring(2), "hex");
         const request = solanaWithdrawalCoder.types.decode(
           'TransferRequest',
           buffer
@@ -216,6 +260,25 @@ export const decodeWithdrawal = (
             amount: request.amount.toString(),
             nonce: request.nonce.toString(),
             expiration: request.expiration.toString(),
+          }
+        }
+      } catch {
+        throw new Error("Failed to decode withdrawal");
+      }
+    }
+
+    case "sui-vm": {
+      try {
+        const buffer = Uint8Array.from(Buffer.from(encodedWithdrawal.substring(2), "hex"));
+        const request = SuiTransferRequestStruct.parse(buffer);
+        return {
+          vmType: "sui-vm",
+          withdrawal: {
+            recipient: request.recipient,
+            coinType: request.coin_type.name,
+            amount: request.amount.toString(),
+            nonce: request.nonce.toString(),
+            expiration: Number(request.expiration.toString()),
           }
         }
       } catch {
@@ -258,6 +321,12 @@ export const getDecodedWithdrawalId = (
 
     case "solana-vm": {
       const message = encodeSolanaWithdrawal(decodedWithdrawal.withdrawal);
+      const requestHash = sha256.create().update(message).hex();
+      return `0x${requestHash}`
+    }
+
+    case "sui-vm": {
+      const message = encodeSuiWithdrawal(decodedWithdrawal.withdrawal);
       const requestHash = sha256.create().update(message).hex();
       return `0x${requestHash}`
     }
