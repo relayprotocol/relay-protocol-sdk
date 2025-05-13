@@ -259,7 +259,7 @@ export const getDecodedWithdrawalId = (
     case "solana-vm": {
       const message = encodeSolanaWithdrawal(decodedWithdrawal.withdrawal);
       const requestHash = sha256.create().update(message).hex();
-      return requestHash
+      return `0x${requestHash}`
     }
 
     default:
