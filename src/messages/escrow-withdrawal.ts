@@ -14,6 +14,11 @@ import {
   getChainVmType,
   VmType,
 } from "../utils";
+import { RelayEscrowIdl } from "./idls/RelayEscrowIdl";
+import * as anchor from "@coral-xyz/anchor";
+import { BorshCoder, Idl } from "@coral-xyz/anchor";
+import { PublicKey } from "@solana/web3.js";
+import { sha256 } from 'js-sha256';
 
 // Main message
 
@@ -77,7 +82,9 @@ export const getEscrowWithdrawalMessageId = (
 
 // Encoding / decoding utilities
 
-type DecodedWithdrawal = {
+const solanaWithdrawalCoder = new BorshCoder(RelayEscrowIdl as Idl);
+
+type DecodedEvmWithdrawal = {
   vmType: "ethereum-vm";
   withdrawal: {
     calls: {
@@ -90,6 +97,35 @@ type DecodedWithdrawal = {
     expiration: number;
   };
 };
+
+export interface DecodedSolanaWithdrawal {
+  vmType: "solana-vm";
+  withdrawal: {
+    recipient: string;
+    token: string | null;
+    amount: string;
+    nonce: string;
+    expiration: number;
+  };
+}
+
+type DecodedWithdrawal = DecodedEvmWithdrawal | DecodedSolanaWithdrawal;
+
+const createSolanaWithdrawalRequest = (withdrawal: DecodedSolanaWithdrawal['withdrawal']) => {
+  return {
+    recipient: new PublicKey(withdrawal.recipient),
+    token: withdrawal.token ? new PublicKey(withdrawal.token) : null,
+    amount: new anchor.BN(withdrawal.amount),
+    nonce: new anchor.BN(withdrawal.nonce),
+    expiration: new anchor.BN(withdrawal.expiration)
+  };
+};
+
+const encodeSolanaWithdrawal = (withdrawal: DecodedSolanaWithdrawal['withdrawal']) => {
+  const request = createSolanaWithdrawalRequest(withdrawal);
+  return solanaWithdrawalCoder.types.encode('TransferRequest', request);
+};
+
 
 export const encodeWithdrawal = (
   decodedWithdrawal: DecodedWithdrawal
@@ -114,6 +150,15 @@ export const encodeWithdrawal = (
             },
           ]
         );
+      } catch {
+        throw new Error("Failed to encode withdrawal");
+      }
+    }
+
+    case "solana-vm": {
+      try {
+        const message = encodeSolanaWithdrawal(decodedWithdrawal.withdrawal);
+        return '0x'+message.toString('hex');
       } catch {
         throw new Error("Failed to encode withdrawal");
       }
@@ -156,6 +201,28 @@ export const decodeWithdrawal = (
       }
     }
 
+    case "solana-vm": {
+      try {
+        const buffer = Buffer.from(encodedWithdrawal, "hex");
+        const request = solanaWithdrawalCoder.types.decode(
+          'TransferRequest',
+          buffer
+        );
+        return {
+          vmType: "solana-vm",
+          withdrawal: {
+            recipient: request.recipient.toString(),
+            token:  request.token ? request.token.toString() : null,
+            amount: request.amount.toString(),
+            nonce: request.nonce.toString(),
+            expiration: request.expiration.toString(),
+          }
+        }
+      } catch {
+        throw new Error("Failed to decode withdrawal");
+      }
+    }
+
     default:
       throw new Error("Unsupported vm type");
   }
@@ -187,6 +254,12 @@ export const getDecodedWithdrawalId = (
           expiration: decodedWithdrawal.withdrawal.expiration,
         },
       });
+    }
+
+    case "solana-vm": {
+      const message = encodeSolanaWithdrawal(decodedWithdrawal.withdrawal);
+      const requestHash = sha256.create().update(message).hex();
+      return requestHash
     }
 
     default:
