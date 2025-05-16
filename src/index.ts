@@ -1,6 +1,8 @@
 import {
   Order,
+  encodeOrderCall,
   decodeOrderCall,
+  encodeOrderExtraData,
   decodeOrderExtraData,
   getOrderId,
 } from "./order";
@@ -43,7 +45,9 @@ import {
 export {
   // Order
   Order,
+  encodeOrderCall,
   decodeOrderCall,
+  encodeOrderExtraData,
   decodeOrderExtraData,
   getOrderId,
 

@@ -1,4 +1,11 @@
-import { decodeAbiParameters, hashStruct, Hex, parseAbiParameters } from "viem";
+import {
+  Address,
+  decodeAbiParameters,
+  encodeAbiParameters,
+  hashStruct,
+  Hex,
+  parseAbiParameters,
+} from "viem";
 
 import {
   ChainIdToVmType,
@@ -182,6 +189,24 @@ type DecodedCall = {
   };
 };
 
+export const encodeOrderCall = (call: DecodedCall): string => {
+  switch (call.vmType) {
+    case "ethereum-vm": {
+      return encodeAbiParameters(
+        parseAbiParameters(["(address to)", "(bytes data)", "(uint256 value)"]),
+        [
+          { to: call.call.to as Address },
+          { data: call.call.data as Hex },
+          { value: BigInt(call.call.value) },
+        ]
+      );
+    }
+
+    default:
+      throw new Error("Unsupported vm type");
+  }
+};
+
 export const decodeOrderCall = (call: string, vmType: VmType): DecodedCall => {
   switch (vmType) {
     case "ethereum-vm": {
@@ -218,6 +243,20 @@ type DecodedExtraData = {
   extraData: {
     fillContract: string;
   };
+};
+
+export const encodeOrderExtraData = (extraData: DecodedExtraData): string => {
+  switch (extraData.vmType) {
+    case "ethereum-vm": {
+      return encodeAbiParameters(
+        parseAbiParameters(["(address fillContract)"]),
+        [{ fillContract: extraData.extraData.fillContract as Address }]
+      );
+    }
+
+    default:
+      throw new Error("Unsupported vm type");
+  }
 };
 
 export const decodeOrderExtraData = (
