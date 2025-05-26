@@ -1,4 +1,4 @@
-import { hashStruct } from "viem";
+import { bytesToHex, hashStruct } from "viem";
 
 import { normalizeOrder, Order, ORDER_EIP712_TYPES } from "../order";
 import {
@@ -80,7 +80,7 @@ export const getSolverRefundMessageId = (
             input.transactionId,
             vmType(message.data.order.inputs[input.inputIndex].payment.chainId)
           ),
-          onchainId: input.onchainId,
+          onchainId: bytesToHex(encodeBytes(input.onchainId)),
           inputIndex: input.inputIndex,
         })),
         refunds: message.data.refunds.map((refund) => ({
@@ -97,7 +97,7 @@ export const getSolverRefundMessageId = (
         })),
       },
       result: {
-        orderId: message.result.orderId,
+        orderId: bytesToHex(encodeBytes(message.result.orderId)),
         status: message.result.status,
         totalWeightedInputPaymentBpsDiff:
           message.result.totalWeightedInputPaymentBpsDiff,

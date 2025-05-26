@@ -1,4 +1,4 @@
-import { hashStruct } from "viem";
+import { bytesToHex, hashStruct } from "viem";
 
 import {
   ChainIdToVmType,
@@ -58,12 +58,12 @@ export const getEscrowDepositMessageId = (
         ),
       },
       result: {
-        onchainId: encodeBytes(message.result.onchainId),
+        onchainId: bytesToHex(encodeBytes(message.result.onchainId)),
         escrow: encodeAddress(
           message.result.escrow,
           vmType(message.data.chainId)
         ),
-        depositId: encodeBytes(message.result.depositId),
+        depositId: bytesToHex(encodeBytes(message.result.depositId)),
         depositor: encodeAddress(
           message.result.depositor,
           vmType(message.data.chainId)

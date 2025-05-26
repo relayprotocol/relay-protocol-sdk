@@ -1,5 +1,6 @@
 import {
   Address,
+  bytesToHex,
   decodeAbiParameters,
   encodeAbiParameters,
   hashStruct,
@@ -64,7 +65,7 @@ export const getEscrowWithdrawalMessageId = (
         withdrawal: encodeBytes(message.data.withdrawal),
       },
       result: {
-        withdrawalId: message.result.withdrawalId,
+        withdrawalId: bytesToHex(encodeBytes(message.result.withdrawalId)),
         escrow: encodeAddress(
           message.result.escrow,
           vmType(message.data.chainId)
