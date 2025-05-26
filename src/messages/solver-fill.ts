@@ -48,8 +48,8 @@ export const getSolverFillMessageId = (
       Data: [
         { name: "order", type: "Order" },
         { name: "orderSignature", type: "bytes" },
-        { name: "inputs", type: "Input[]" },
-        { name: "fill", type: "Fill" },
+        { name: "inputs", type: "InputEntry[]" },
+        { name: "fill", type: "FillEntry" },
       ],
       Result: [
         { name: "orderId", type: "bytes32" },
@@ -57,12 +57,12 @@ export const getSolverFillMessageId = (
         { name: "totalWeightedInputPaymentBpsDiff", type: "uint256" },
       ],
       ...ORDER_EIP712_TYPES,
-      Input: [
+      InputEntry: [
         { name: "transactionId", type: "bytes" },
         { name: "onchainId", type: "bytes32" },
         { name: "inputIndex", type: "uint32" },
       ],
-      Fill: [{ name: "transactionId", type: "bytes" }],
+      FillEntry: [{ name: "transactionId", type: "bytes" }],
     },
     primaryType: "SolverFill",
     data: {

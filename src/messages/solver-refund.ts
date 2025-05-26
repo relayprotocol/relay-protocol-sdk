@@ -50,8 +50,8 @@ export const getSolverRefundMessageId = (
       Data: [
         { name: "order", type: "Order" },
         { name: "orderSignature", type: "bytes" },
-        { name: "inputs", type: "Input[]" },
-        { name: "refunds", type: "Refund[]" },
+        { name: "inputs", type: "InputEntry[]" },
+        { name: "refunds", type: "RefundEntry[]" },
       ],
       Result: [
         { name: "orderId", type: "bytes32" },
@@ -59,12 +59,12 @@ export const getSolverRefundMessageId = (
         { name: "totalWeightedInputPaymentBpsDiff", type: "uint256" },
       ],
       ...ORDER_EIP712_TYPES,
-      Input: [
+      InputEntry: [
         { name: "transactionId", type: "bytes" },
         { name: "onchainId", type: "bytes32" },
         { name: "inputIndex", type: "uint32" },
       ],
-      Refund: [
+      RefundEntry: [
         { name: "transactionId", type: "bytes" },
         { name: "inputIndex", type: "uint32" },
         { name: "refundIndex", type: "uint32" },
