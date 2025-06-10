@@ -16,6 +16,9 @@ import {
 } from "../utils";
 
 export type Order = {
+  // The version of the order (determines the expected format)
+  version: "v1";
+
   // The chain id and address of the solver given exclusive filling rights (must be an ethereum-vm eoa)
   solverChainId: string;
   solver: string;
@@ -74,6 +77,7 @@ export type Order = {
 
 export const ORDER_EIP712_TYPES = {
   Order: [
+    { name: "version", type: "string" },
     { name: "solverChainId", type: "string" },
     { name: "solver", type: "address" },
     { name: "salt", type: "uint256" },
@@ -125,6 +129,7 @@ export const normalizeOrder = (order: Order, chainsConfig: ChainIdToVmType) => {
   const vmType = (chainId: string) => getChainVmType(chainId, chainsConfig);
 
   return {
+    version: order.version,
     solverChainId: order.solverChainId,
     solver: order.solver,
     salt: order.salt,
