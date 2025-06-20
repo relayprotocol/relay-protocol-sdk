@@ -8,14 +8,14 @@ import {
   getChainVmType,
 } from "../utils";
 
-export type EscrowDepositMessage = {
+export type DepositoryDepositMessage = {
   data: {
     chainId: string;
     transactionId: string;
   };
   result: {
     onchainId: string;
-    escrow: string;
+    depository: string;
     depositId: string;
     depositor: string;
     currency: string;
@@ -23,15 +23,15 @@ export type EscrowDepositMessage = {
   };
 };
 
-export const getEscrowDepositMessageId = (
-  message: EscrowDepositMessage,
+export const getDepositoryDepositMessageId = (
+  message: DepositoryDepositMessage,
   chainsConfig: ChainIdToVmType
 ) => {
   const vmType = (chainId: string) => getChainVmType(chainId, chainsConfig);
 
   return hashStruct({
     types: {
-      EscrowDeposit: [
+      DepositoryDeposit: [
         { name: "data", type: "Data" },
         { name: "result", type: "Result" },
       ],
@@ -41,14 +41,14 @@ export const getEscrowDepositMessageId = (
       ],
       Result: [
         { name: "onchainId", type: "bytes32" },
-        { name: "escrow", type: "bytes" },
+        { name: "depository", type: "bytes" },
         { name: "depositId", type: "bytes32" },
         { name: "depositor", type: "bytes" },
         { name: "currency", type: "bytes" },
         { name: "amount", type: "uint256" },
       ],
     },
-    primaryType: "EscrowDeposit",
+    primaryType: "DepositoryDeposit",
     data: {
       data: {
         chainId: message.data.chainId,
@@ -59,8 +59,8 @@ export const getEscrowDepositMessageId = (
       },
       result: {
         onchainId: bytesToHex(encodeBytes(message.result.onchainId)),
-        escrow: encodeAddress(
-          message.result.escrow,
+        depository: encodeAddress(
+          message.result.depository,
           vmType(message.data.chainId)
         ),
         depositId: bytesToHex(encodeBytes(message.result.depositId)),

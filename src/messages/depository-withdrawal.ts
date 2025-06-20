@@ -16,35 +16,33 @@ import {
   VmType,
 } from "../utils";
 
-// Main message
-
-export enum EscrowWithdrawalStatus {
+export enum DepositoryWithdrawalStatus {
   PENDING = 0,
   EXECUTED = 1,
   EXPIRED = 2,
 }
 
-export type EscrowWithdrawalMessage = {
+export type DepositoryWithdrawalMessage = {
   data: {
     chainId: string;
     withdrawal: string;
   };
   result: {
     withdrawalId: string;
-    escrow: string;
-    status: EscrowWithdrawalStatus;
+    depository: string;
+    status: DepositoryWithdrawalStatus;
   };
 };
 
-export const getEscrowWithdrawalMessageId = (
-  message: EscrowWithdrawalMessage,
+export const getDepositoryWithdrawalMessageId = (
+  message: DepositoryWithdrawalMessage,
   chainsConfig: ChainIdToVmType
 ) => {
   const vmType = (chainId: string) => getChainVmType(chainId, chainsConfig);
 
   return hashStruct({
     types: {
-      EscrowWithdrawal: [
+      DepositoryWithdrawal: [
         { name: "data", type: "Data" },
         { name: "result", type: "Result" },
       ],
@@ -54,11 +52,11 @@ export const getEscrowWithdrawalMessageId = (
       ],
       Result: [
         { name: "withdrawalId", type: "bytes32" },
-        { name: "escrow", type: "bytes" },
+        { name: "depository", type: "bytes" },
         { name: "status", type: "uint8" },
       ],
     },
-    primaryType: "EscrowWithdrawal",
+    primaryType: "DepositoryWithdrawal",
     data: {
       data: {
         chainId: message.data.chainId,
@@ -66,8 +64,8 @@ export const getEscrowWithdrawalMessageId = (
       },
       result: {
         withdrawalId: bytesToHex(encodeBytes(message.result.withdrawalId)),
-        escrow: encodeAddress(
-          message.result.escrow,
+        depository: encodeAddress(
+          message.result.depository,
           vmType(message.data.chainId)
         ),
         status: message.result.status,
@@ -75,8 +73,6 @@ export const getEscrowWithdrawalMessageId = (
     },
   });
 };
-
-// Encoding / decoding utilities
 
 type DecodedWithdrawal = {
   vmType: "ethereum-vm";

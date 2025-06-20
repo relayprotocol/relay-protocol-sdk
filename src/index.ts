@@ -8,18 +8,18 @@ import {
 } from "./order";
 
 import {
-  EscrowDepositMessage,
-  getEscrowDepositMessageId,
-} from "./messages/escrow-deposit";
+  DepositoryDepositMessage,
+  getDepositoryDepositMessageId,
+} from "./messages/depository-deposit";
 
 import {
-  EscrowWithdrawalMessage,
-  EscrowWithdrawalStatus,
-  getEscrowWithdrawalMessageId,
+  DepositoryWithdrawalMessage,
+  DepositoryWithdrawalStatus,
+  getDepositoryWithdrawalMessageId,
   encodeWithdrawal,
   decodeWithdrawal,
   getDecodedWithdrawalId,
-} from "./messages/escrow-withdrawal";
+} from "./messages/depository-withdrawal";
 
 import {
   SolverRefundMessage,
@@ -51,14 +51,14 @@ export {
   decodeOrderExtraData,
   getOrderId,
 
-  // EscrowDeposit
-  EscrowDepositMessage,
-  getEscrowDepositMessageId,
+  // DepositoryDeposit
+  DepositoryDepositMessage,
+  getDepositoryDepositMessageId,
 
-  // EscrowWithdrawal
-  EscrowWithdrawalMessage,
-  EscrowWithdrawalStatus,
-  getEscrowWithdrawalMessageId,
+  // DepositoryWithdrawal
+  DepositoryWithdrawalMessage,
+  DepositoryWithdrawalStatus,
+  getDepositoryWithdrawalMessageId,
   encodeWithdrawal,
   decodeWithdrawal,
   getDecodedWithdrawalId,
