@@ -56,7 +56,7 @@ export const getSolverRefundMessageId = (
       Result: [
         { name: "orderId", type: "bytes32" },
         { name: "status", type: "uint8" },
-        { name: "totalWeightedInputPaymentBpsDiff", type: "uint256" },
+        { name: "totalWeightedInputPaymentBpsDiff", type: "int256" },
       ],
       ...ORDER_EIP712_TYPES,
       InputEntry: [
