@@ -1,0 +1,234 @@
+{
+  "version": "0.1.0",
+  "name": "relay_depository",
+  "instructions": [
+    {
+      "name": "depositNative",
+      "accounts": [
+        {
+          "name": "relayDepository",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "sender",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "depositor",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "id",
+          "type": {
+            "array": ["u8", 32]
+          }
+        }
+      ]
+    },
+    {
+      "name": "depositToken",
+      "accounts": [
+        {
+          "name": "relayDepository",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "sender",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "depositor",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "senderTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "id",
+          "type": {
+            "array": ["u8", 32]
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "RelayDepository",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "publicKey"
+          },
+          {
+            "name": "allocator",
+            "type": "publicKey"
+          },
+          {
+            "name": "vaultBump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UsedRequest",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "isUsed",
+            "type": "bool"
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "TransferRequest",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "recipient",
+            "type": "publicKey"
+          },
+          {
+            "name": "token",
+            "type": {
+              "option": "publicKey"
+            }
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "nonce",
+            "type": "u64"
+          },
+          {
+            "name": "expiration",
+            "type": "i64"
+          }
+        ]
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "TransferExecutedEvent",
+      "fields": [
+        {
+          "name": "request",
+          "type": {
+            "defined": "TransferRequest"
+          },
+          "index": false
+        },
+        {
+          "name": "executor",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "id",
+          "type": "publicKey",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "DepositEvent",
+      "fields": [
+        {
+          "name": "depositor",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "token",
+          "type": {
+            "option": "publicKey"
+          },
+          "index": false
+        },
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "id",
+          "type": {
+            "array": ["u8", 32]
+          },
+          "index": false
+        }
+      ]
+    }
+  ]
+}

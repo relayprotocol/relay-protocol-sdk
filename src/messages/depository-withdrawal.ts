@@ -15,7 +15,7 @@ import {
   getChainVmType,
   VmType,
 } from "../utils";
-import { RelayEscrowIdl } from "./idls/RelayEscrowIdl";
+import RelayDepositoryIdl from "./idls/relay-depository.json";
 import * as anchor from "@coral-xyz/anchor";
 import { BorshCoder, Idl } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
@@ -82,7 +82,7 @@ export const getDepositoryWithdrawalMessageId = (
 
 // Encoding / decoding utilities
 
-const solanaWithdrawalCoder = new BorshCoder(RelayEscrowIdl as Idl);
+const solanaWithdrawalCoder = new BorshCoder(RelayDepositoryIdl as Idl);
 
 type DecodedEvmWithdrawal = {
   vmType: "ethereum-vm";
