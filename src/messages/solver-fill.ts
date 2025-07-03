@@ -1,4 +1,4 @@
-import { hashStruct } from "viem";
+import { bytesToHex, hashStruct } from "viem";
 
 import { normalizeOrder, Order, ORDER_EIP712_TYPES } from "../order";
 import {
@@ -48,21 +48,21 @@ export const getSolverFillMessageId = (
       Data: [
         { name: "order", type: "Order" },
         { name: "orderSignature", type: "bytes" },
-        { name: "inputs", type: "Input[]" },
-        { name: "fill", type: "Fill" },
+        { name: "inputs", type: "InputEntry[]" },
+        { name: "fill", type: "FillEntry" },
       ],
       Result: [
         { name: "orderId", type: "bytes32" },
         { name: "status", type: "uint8" },
-        { name: "totalWeightedInputPaymentBpsDiff", type: "uint256" },
+        { name: "totalWeightedInputPaymentBpsDiff", type: "int256" },
       ],
       ...ORDER_EIP712_TYPES,
-      Input: [
+      InputEntry: [
         { name: "transactionId", type: "bytes" },
         { name: "onchainId", type: "bytes32" },
         { name: "inputIndex", type: "uint32" },
       ],
-      Fill: [{ name: "transactionId", type: "bytes" }],
+      FillEntry: [{ name: "transactionId", type: "bytes" }],
     },
     primaryType: "SolverFill",
     data: {
@@ -74,7 +74,7 @@ export const getSolverFillMessageId = (
             input.transactionId,
             vmType(message.data.order.inputs[input.inputIndex].payment.chainId)
           ),
-          onchainId: input.onchainId,
+          onchainId: bytesToHex(encodeBytes(input.onchainId)),
           inputIndex: input.inputIndex,
         })),
         fill: {
@@ -85,7 +85,7 @@ export const getSolverFillMessageId = (
         },
       },
       result: {
-        orderId: message.result.orderId,
+        orderId: bytesToHex(encodeBytes(message.result.orderId)),
         status: message.result.status,
         totalWeightedInputPaymentBpsDiff:
           message.result.totalWeightedInputPaymentBpsDiff,
