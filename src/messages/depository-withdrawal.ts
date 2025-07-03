@@ -1,3 +1,8 @@
+import * as anchor from "@coral-xyz/anchor";
+import { BorshCoder, Idl } from "@coral-xyz/anchor";
+import { bcs } from "@mysten/sui/bcs";
+import { PublicKey, SystemProgram } from "@solana/web3.js";
+import { sha256 } from "js-sha256";
 import {
   Address,
   bytesToHex,
@@ -15,6 +20,8 @@ import {
   getChainVmType,
   VmType,
 } from "../utils";
+
+import RelayDepositoryIdl from "./common/solana-vm/idls/relay-depository.json";
 
 export enum DepositoryWithdrawalStatus {
   PENDING = 0,
@@ -74,7 +81,9 @@ export const getDepositoryWithdrawalMessageId = (
   });
 };
 
-type DecodedWithdrawal = {
+// Encoding / decoding utilities
+
+type DecodedEthereumVmWithdrawal = {
   vmType: "ethereum-vm";
   withdrawal: {
     calls: {
@@ -87,6 +96,33 @@ type DecodedWithdrawal = {
     expiration: number;
   };
 };
+
+type DecodedSolanaVmWithdrawal = {
+  vmType: "solana-vm";
+  withdrawal: {
+    recipient: string;
+    token: string;
+    amount: string;
+    nonce: string;
+    expiration: number;
+  };
+};
+
+type DecodedSuiVmWithdrawal = {
+  vmType: "sui-vm";
+  withdrawal: {
+    recipient: string;
+    coinType: string;
+    amount: string;
+    nonce: string;
+    expiration: number;
+  };
+};
+
+type DecodedWithdrawal =
+  | DecodedEthereumVmWithdrawal
+  | DecodedSolanaVmWithdrawal
+  | DecodedSuiVmWithdrawal;
 
 export const encodeWithdrawal = (
   decodedWithdrawal: DecodedWithdrawal
@@ -110,6 +146,64 @@ export const encodeWithdrawal = (
               expiration: BigInt(decodedWithdrawal.withdrawal.expiration),
             },
           ]
+        );
+      } catch {
+        throw new Error("Failed to encode withdrawal");
+      }
+    }
+
+    case "solana-vm": {
+      try {
+        const coder = new BorshCoder(RelayDepositoryIdl as Idl);
+        return (
+          "0x" +
+          coder.types
+            .encode("TransferRequest", {
+              recipient: new PublicKey(decodedWithdrawal.withdrawal.recipient),
+              token:
+                decodedWithdrawal.withdrawal.token ===
+                SystemProgram.programId.toBase58()
+                  ? null
+                  : new PublicKey(decodedWithdrawal.withdrawal.token),
+              amount: new anchor.BN(decodedWithdrawal.withdrawal.amount),
+              nonce: new anchor.BN(decodedWithdrawal.withdrawal.nonce),
+              expiration: new anchor.BN(
+                decodedWithdrawal.withdrawal.expiration
+              ),
+            })
+            .toString("hex")
+        );
+      } catch {
+        throw new Error("Failed to encode withdrawal");
+      }
+    }
+
+    case "sui-vm": {
+      try {
+        return (
+          "0x" +
+          Buffer.from(
+            bcs
+              .struct("TransferRequest", {
+                recipient: bcs.Address,
+                amount: bcs.u64(),
+                coin_type: bcs.struct("TypeName", {
+                  name: bcs.string(),
+                }),
+                nonce: bcs.u64(),
+                expiration: bcs.u64(),
+              })
+              .serialize({
+                recipient: decodedWithdrawal.withdrawal.recipient,
+                amount: BigInt(decodedWithdrawal.withdrawal.amount),
+                coin_type: {
+                  name: decodedWithdrawal.withdrawal.coinType,
+                },
+                nonce: BigInt(decodedWithdrawal.withdrawal.nonce),
+                expiration: BigInt(decodedWithdrawal.withdrawal.expiration),
+              })
+              .toBytes()
+          ).toString("hex")
         );
       } catch {
         throw new Error("Failed to encode withdrawal");
@@ -153,6 +247,63 @@ export const decodeWithdrawal = (
       }
     }
 
+    case "solana-vm": {
+      try {
+        const buffer = Buffer.from(encodedWithdrawal.substring(2), "hex");
+
+        const coder = new BorshCoder(RelayDepositoryIdl as Idl);
+        const request = coder.types.decode("TransferRequest", buffer);
+
+        return {
+          vmType: "solana-vm",
+          withdrawal: {
+            recipient: request.recipient.toBase58(),
+            token: request.token
+              ? request.token.toBase58()
+              : SystemProgram.programId.toBase58(),
+            amount: request.amount.toString(),
+            nonce: request.nonce.toString(),
+            expiration: request.expiration.toNumber(),
+          },
+        };
+      } catch {
+        throw new Error("Failed to decode withdrawal");
+      }
+    }
+
+    case "sui-vm": {
+      try {
+        const buffer = Uint8Array.from(
+          Buffer.from(encodedWithdrawal.substring(2), "hex")
+        );
+
+        const request = bcs
+          .struct("TransferRequest", {
+            recipient: bcs.Address,
+            amount: bcs.u64(),
+            coin_type: bcs.struct("TypeName", {
+              name: bcs.string(),
+            }),
+            nonce: bcs.u64(),
+            expiration: bcs.u64(),
+          })
+          .parse(buffer);
+
+        return {
+          vmType: "sui-vm",
+          withdrawal: {
+            recipient: request.recipient,
+            coinType: request.coin_type.name,
+            amount: request.amount.toString(),
+            nonce: request.nonce.toString(),
+            expiration: Number(request.expiration.toString()),
+          },
+        };
+      } catch {
+        throw new Error("Failed to decode withdrawal");
+      }
+    }
+
     default:
       throw new Error("Unsupported vm type");
   }
@@ -184,6 +335,52 @@ export const getDecodedWithdrawalId = (
           expiration: decodedWithdrawal.withdrawal.expiration,
         },
       });
+    }
+
+    case "solana-vm": {
+      const coder = new BorshCoder(RelayDepositoryIdl as Idl);
+      const encodedWithdrawal =
+        "0x" +
+        coder.types
+          .encode("TransferRequest", {
+            recipient: new PublicKey(decodedWithdrawal.withdrawal.recipient),
+            token: new PublicKey(decodedWithdrawal.withdrawal.token),
+            amount: new anchor.BN(decodedWithdrawal.withdrawal.amount),
+            nonce: new anchor.BN(decodedWithdrawal.withdrawal.nonce),
+            expiration: new anchor.BN(decodedWithdrawal.withdrawal.expiration),
+          })
+          .toString("hex");
+
+      return "0x" + sha256.create().update(encodedWithdrawal).hex();
+    }
+
+    case "sui-vm": {
+      const encodedWithdrawal =
+        "0x" +
+        Buffer.from(
+          bcs
+            .struct("TransferRequest", {
+              recipient: bcs.Address,
+              amount: bcs.u64(),
+              coin_type: bcs.struct("TypeName", {
+                name: bcs.string(),
+              }),
+              nonce: bcs.u64(),
+              expiration: bcs.u64(),
+            })
+            .serialize({
+              recipient: decodedWithdrawal.withdrawal.recipient,
+              amount: BigInt(decodedWithdrawal.withdrawal.amount),
+              coin_type: {
+                name: decodedWithdrawal.withdrawal.coinType,
+              },
+              nonce: BigInt(decodedWithdrawal.withdrawal.nonce),
+              expiration: BigInt(decodedWithdrawal.withdrawal.expiration),
+            })
+            .toBytes()
+        ).toString("hex");
+
+      return "0x" + sha256.create().update(encodedWithdrawal).hex();
     }
 
     default:
