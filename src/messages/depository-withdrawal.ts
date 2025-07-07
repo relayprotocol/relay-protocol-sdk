@@ -344,14 +344,23 @@ export const getDecodedWithdrawalId = (
         coder.types
           .encode("TransferRequest", {
             recipient: new PublicKey(decodedWithdrawal.withdrawal.recipient),
-            token: new PublicKey(decodedWithdrawal.withdrawal.token),
+            token:
+              decodedWithdrawal.withdrawal.token ===
+              SystemProgram.programId.toBase58()
+                ? null
+                : new PublicKey(decodedWithdrawal.withdrawal.token),
             amount: new anchor.BN(decodedWithdrawal.withdrawal.amount),
             nonce: new anchor.BN(decodedWithdrawal.withdrawal.nonce),
             expiration: new anchor.BN(decodedWithdrawal.withdrawal.expiration),
           })
           .toString("hex");
 
-      return "0x" + sha256.create().update(encodedWithdrawal).hex();
+      return (
+        "0x" +
+        Buffer.from(sha256.create().update(encodedWithdrawal).array()).toString(
+          "hex"
+        )
+      );
     }
 
     case "sui-vm": {
