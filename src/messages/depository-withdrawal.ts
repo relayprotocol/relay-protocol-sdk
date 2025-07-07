@@ -21,7 +21,7 @@ import {
   VmType,
 } from "../utils";
 
-import RelayDepositoryIdl from "./common/solana-vm/idls/relay-depository.json";
+import { RelayDepositoryIdl } from "./common/solana-vm/idls/RelayDepositoryIdl";
 
 export enum DepositoryWithdrawalStatus {
   PENDING = 0,
