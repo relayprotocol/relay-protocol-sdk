@@ -119,6 +119,18 @@ type DecodedSuiVmWithdrawal = {
   };
 };
 
+type DecodedBitcoinVmWithdrawal = {
+  vmType: "bitcoin-vm";
+  withdrawal: {
+    utxo: string;
+    recipient: string;
+    coinType: string;
+    amount: string;
+    nonce: string;
+    expiration: number;
+  };
+};
+
 type DecodedWithdrawal =
   | DecodedEthereumVmWithdrawal
   | DecodedSolanaVmWithdrawal
