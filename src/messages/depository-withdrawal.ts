@@ -122,19 +122,19 @@ type DecodedSuiVmWithdrawal = {
 type DecodedBitcoinVmWithdrawal = {
   vmType: "bitcoin-vm";
   withdrawal: {
-    utxo: string;
     recipient: string;
-    coinType: string;
     amount: string;
     nonce: string;
     expiration: number;
+    txId: string;
   };
 };
 
 type DecodedWithdrawal =
   | DecodedEthereumVmWithdrawal
   | DecodedSolanaVmWithdrawal
-  | DecodedSuiVmWithdrawal;
+  | DecodedSuiVmWithdrawal
+  | DecodedBitcoinVmWithdrawal;
 
 export const encodeWithdrawal = (
   decodedWithdrawal: DecodedWithdrawal
@@ -219,6 +219,21 @@ export const encodeWithdrawal = (
         );
       } catch {
         throw new Error("Failed to encode withdrawal");
+      }
+    }
+
+    case "bitcoin-vm": {
+      try {
+        const bitcoinData = {
+          recipient: decodedWithdrawal.withdrawal.recipient,
+          amount: decodedWithdrawal.withdrawal.amount,
+          nonce: decodedWithdrawal.withdrawal.nonce,
+          expiration: decodedWithdrawal.withdrawal.expiration,
+        };
+        
+        return "0x" + Buffer.from(JSON.stringify(bitcoinData)).toString("hex");
+      } catch {
+        throw new Error("Failed to encode Bitcoin withdrawal");
       }
     }
 
@@ -316,6 +331,26 @@ export const decodeWithdrawal = (
       }
     }
 
+    case "bitcoin-vm": {
+      try {
+        const buffer = Buffer.from(encodedWithdrawal.substring(2), "hex");
+        const bitcoinData = JSON.parse(buffer.toString());
+        
+        return {
+          vmType: "bitcoin-vm",
+          withdrawal: {
+            recipient: bitcoinData.recipient,
+            amount: bitcoinData.amount,
+            nonce: bitcoinData.nonce,
+            txId: bitcoinData.txId,
+            expiration: Number(bitcoinData.expiration),
+          },
+        };
+      } catch {
+        throw new Error("Failed to decode Bitcoin withdrawal");
+      }
+    }
+
     default:
       throw new Error("Unsupported vm type");
   }
@@ -397,6 +432,19 @@ export const getDecodedWithdrawalId = (
             .toBytes()
         ).toString("hex");
 
+      return "0x" + sha256.create().update(encodedWithdrawal).hex();
+    }
+
+    case "bitcoin-vm": {
+      const bitcoinData = {
+        recipient: decodedWithdrawal.withdrawal.recipient,
+        amount: decodedWithdrawal.withdrawal.amount,
+        nonce: decodedWithdrawal.withdrawal.nonce,
+        expiration: decodedWithdrawal.withdrawal.expiration,
+        txId: decodedWithdrawal.withdrawal.txId,
+      };
+      
+      const encodedWithdrawal = "0x" + Buffer.from(JSON.stringify(bitcoinData)).toString("hex");
       return "0x" + sha256.create().update(encodedWithdrawal).hex();
     }
 
