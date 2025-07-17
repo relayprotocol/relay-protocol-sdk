@@ -229,6 +229,7 @@ export const encodeWithdrawal = (
           amount: decodedWithdrawal.withdrawal.amount,
           nonce: decodedWithdrawal.withdrawal.nonce,
           expiration: decodedWithdrawal.withdrawal.expiration,
+          txId: decodedWithdrawal.withdrawal.txId,
         };
         
         return "0x" + Buffer.from(JSON.stringify(bitcoinData)).toString("hex");
