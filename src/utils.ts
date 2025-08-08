@@ -1,7 +1,8 @@
 import { bytesToHex, Hex, hexToBytes } from "viem";
+import { bech32, bech32m } from "bech32";
+import * as bitcoin from "bitcoinjs-lib";
 import bs58 from "bs58";
 import { Address } from "@ton/core";
-import { bech32, bech32m } from "bech32";
 
 export type VmType =
   | "bitcoin-vm"
@@ -31,39 +32,42 @@ export const encodeBytes = (bytes: string) => hexToBytes(bytes as Hex);
 
 // Address encoding
 
-// bitocin base58 addresses will have a padding to be able to differentiate from bech32 addresses
-const BVM_BASE58_ADDRESS_PADDING = [0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99];
-
 export const encodeAddress = (address: string, vmType: VmType): Uint8Array => {
   switch (vmType) {
     case "bitcoin-vm": {
-      try {
-        // P2PKH / P2SH
-        const decoded = bs58.decode(address);
-        return Buffer.from(new Uint8Array([...decoded, ...BVM_BASE58_ADDRESS_PADDING]));
-      } catch {
-        try {
-          // P2WPKH
-          const decodedBech32 = bech32.decode(address);
-          // Store prefix length (1 byte), followed by prefix, then address data
-          const prefixBytes = new TextEncoder().encode(decodedBech32.prefix);
-          return Buffer.from(new Uint8Array([
-            1, // type
-            prefixBytes.length,  // Prefix length
-            ...prefixBytes,      // Prefix data
-            ...decodedBech32.words  // Address data
-          ]));
-        } catch {
-          // P2TR
-          const decodedBech32m = bech32m.decode(address);
-          const prefixBytes = new TextEncoder().encode(decodedBech32m.prefix);
-          return Buffer.from(new Uint8Array([
-            2, // type
-            prefixBytes.length,  // Prefix length
-            ...prefixBytes,      // Prefix data
-            ...decodedBech32m.words  // Address data
-          ]));
+      const getBitcoinAddressType = (
+        address: string
+      ): "p2pkh" | "p2sh" | "bech32" | "bech32m" => {
+        if (address.startsWith("1")) {
+          return "p2pkh";
         }
+
+        if (address.startsWith("3")) {
+          return "p2sh";
+        }
+
+        if (address.startsWith("bc1")) {
+          const lower = address.toLowerCase();
+          const decoded = bech32.decode(lower, 90);
+          return decoded.prefix === "bc" && decoded.words[0] === 0
+            ? "bech32"
+            : "bech32m";
+        }
+
+        throw new Error("Unsupported address format");
+      };
+
+      const type = getBitcoinAddressType(address);
+      if (type === "p2pkh" || type === "p2sh") {
+        const decoded = bs58.decode(address);
+        // Strip the checksum
+        return decoded.slice(0, -4);
+      } else {
+        const decoder = type === "bech32" ? bech32 : bech32m;
+        const { words } = decoder.decode(address);
+        const version = words[0];
+        const program = bech32.fromWords(words.slice(1));
+        return Uint8Array.from([version, ...program]);
       }
     }
 
@@ -97,30 +101,26 @@ export const decodeAddress = (address: Uint8Array, vmType: VmType): string => {
   switch (vmType) {
     case "bitcoin-vm": {
       if (
-        address
-          .subarray(-BVM_BASE58_ADDRESS_PADDING.length)
-          .every((v, i) => v === BVM_BASE58_ADDRESS_PADDING[i])
+        address.length === 21 &&
+        (address[0] === 0x00 || address[0] === 0x05)
       ) {
-        // P2PKH / P2SH
-        return bs58.encode(address.subarray(0, -BVM_BASE58_ADDRESS_PADDING.length));
+        // Base58Check (P2PKH/P2SH)
+
+        const checksum = bitcoin.crypto
+          .hash256(Buffer.from(address))
+          .slice(0, 4);
+        const full = Buffer.concat([Buffer.from(address), checksum]);
+        return bs58.encode(full);
       } else {
-        // Get prefix length
-        const type = address[0];
-        const prefixLength = address[1];
-        console.log({
-          type,
-          prefixLength
-        })
-        if (prefixLength > 0) {
-          // Extract prefix
-          const prefix = new TextDecoder().decode(address.subarray(2, 2 + prefixLength));
-          // Extract data
-          const data = address.subarray(2 + prefixLength);
-          if (type === 1) {
-            return bech32.encode(prefix, data);
-          } else if (type === 2) {
-            return bech32m.encode(prefix, data);
-          }
+        // Bech32/Bech32m
+
+        const version = address[0];
+        const program = Array.from(address.slice(1));
+        const words = [version, ...bech32.toWords(Uint8Array.from(program))];
+        if (version === 0) {
+          return bech32.encode("bc", words);
+        } else {
+          return bech32m.encode("bc", words);
         }
       }
     }
@@ -162,7 +162,7 @@ export const encodeTransactionId = (
 ): Uint8Array => {
   switch (vmType) {
     case "bitcoin-vm": {
-      return Buffer.from(transactionId, 'hex');
+      return Uint8Array.from(Buffer.from(transactionId, "hex"));
     }
 
     case "ethereum-vm": {
@@ -197,7 +197,7 @@ export const decodeTransactionId = (
 ): string => {
   switch (vmType) {
     case "bitcoin-vm": {
-      return Buffer.from(transactionId).toString('hex');
+      return Buffer.from(transactionId).toString("hex");
     }
 
     case "ethereum-vm": {
