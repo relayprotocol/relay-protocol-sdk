@@ -2,7 +2,6 @@ import { bytesToHex, Hex, hexToBytes } from "viem";
 import { bech32, bech32m } from "bech32";
 import * as bitcoin from "bitcoinjs-lib";
 import bs58 from "bs58";
-import { Address } from "@ton/core";
 
 export type VmType =
   | "bitcoin-vm"
@@ -88,7 +87,7 @@ export const encodeAddress = (address: string, vmType: VmType): Uint8Array => {
     }
 
     case "ton-vm": {
-      return Address.parse(address).toRaw();
+      throw new Error("Vm type not implemented (encodeAddress)");
     }
 
     case "tron-vm": {
@@ -142,10 +141,7 @@ export const decodeAddress = (address: Uint8Array, vmType: VmType): string => {
     }
 
     case "ton-vm": {
-      const buf = Buffer.from(address);
-      const hash = buf.subarray(0, 32);
-      const workchain = buf[32];
-      return new Address(workchain, hash).toString();
+      throw new Error("Vm type not implemented (encodeAddress)");
     }
 
     case "tron-vm": {

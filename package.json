@@ -1,6 +1,6 @@
 {
   "name": "@reservoir0x/relay-protocol-sdk",
-  "version": "0.0.36",
+  "version": "0.0.37",
   "description": "Relay protocol SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -19,8 +19,6 @@
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",
     "@mysten/sui": "^1.24.0",
-    "@ton/core": "^0.60.1",
-    "@ton/crypto": "^3.3.0",
     "bech32": "^2.0.0",
     "bitcoinjs-lib": "^6.1.7",
     "bs58": "^6.0.0",
