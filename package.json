@@ -1,6 +1,6 @@
 {
   "name": "@reservoir0x/relay-protocol-sdk",
-  "version": "0.0.34",
+  "version": "0.0.35",
   "description": "Relay protocol SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -21,6 +21,8 @@
     "@mysten/sui": "^1.24.0",
     "@ton/core": "^0.60.1",
     "@ton/crypto": "^3.3.0",
+    "bech32": "^2.0.0",
+    "bitcoinjs-lib": "^6.1.7",
     "bs58": "^6.0.0",
     "js-sha256": "^0.11.0",
     "viem": "^2.26.3"
