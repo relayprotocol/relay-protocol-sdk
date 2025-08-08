@@ -83,7 +83,7 @@ export const getDepositoryWithdrawalMessageId = (
 
 // Encoding / decoding utilities
 
-type DecodedEthereumVmWithdrawal = {
+export type DecodedEthereumVmWithdrawal = {
   vmType: "ethereum-vm";
   withdrawal: {
     calls: {
@@ -97,7 +97,7 @@ type DecodedEthereumVmWithdrawal = {
   };
 };
 
-type DecodedSolanaVmWithdrawal = {
+export type DecodedSolanaVmWithdrawal = {
   vmType: "solana-vm";
   withdrawal: {
     recipient: string;
@@ -108,7 +108,7 @@ type DecodedSolanaVmWithdrawal = {
   };
 };
 
-type DecodedSuiVmWithdrawal = {
+export type DecodedSuiVmWithdrawal = {
   vmType: "sui-vm";
   withdrawal: {
     recipient: string;
@@ -119,7 +119,7 @@ type DecodedSuiVmWithdrawal = {
   };
 };
 
-type DecodedBitcoinVmWithdrawal = {
+export type DecodedBitcoinVmWithdrawal = {
   vmType: "bitcoin-vm";
   withdrawal: {
     psbt: string;

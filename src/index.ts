@@ -13,6 +13,10 @@ import {
 } from "./messages/depository-deposit";
 
 import {
+  DecodedBitcoinVmWithdrawal,
+  DecodedEthereumVmWithdrawal,
+  DecodedSolanaVmWithdrawal,
+  DecodedSuiVmWithdrawal,
   DepositoryWithdrawalMessage,
   DepositoryWithdrawalStatus,
   getDepositoryWithdrawalMessageId,
@@ -56,6 +60,10 @@ export {
   getDepositoryDepositMessageId,
 
   // DepositoryWithdrawal
+  DecodedBitcoinVmWithdrawal,
+  DecodedEthereumVmWithdrawal,
+  DecodedSolanaVmWithdrawal,
+  DecodedSuiVmWithdrawal,
   DepositoryWithdrawalMessage,
   DepositoryWithdrawalStatus,
   getDepositoryWithdrawalMessageId,
