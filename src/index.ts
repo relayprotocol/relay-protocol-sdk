@@ -42,8 +42,6 @@ import {
   encodeTransactionId,
 } from "./utils";
 
-import * as bitcoin from "./common/vm/bitcoin-vm";
-
 export {
   // Order
   Order,
@@ -82,7 +80,4 @@ export {
   encodeAddress,
   encodeBytes,
   encodeTransactionId,
-
-  // VM SDK
-  bitcoin,
 };
