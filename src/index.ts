@@ -10,7 +10,7 @@ import {
 import {
   DepositoryDepositMessage,
   getDepositoryDepositMessageId,
-} from "./messages/depository-deposit";
+} from "./messages/v2.1/depository-deposit";
 
 import {
   DecodedBitcoinVmWithdrawal,
@@ -23,19 +23,27 @@ import {
   encodeWithdrawal,
   decodeWithdrawal,
   getDecodedWithdrawalId,
-} from "./messages/depository-withdrawal";
+} from "./messages/v2.1/depository-withdrawal";
 
 import {
   SolverRefundMessage,
   SolverRefundStatus,
   getSolverRefundMessageId,
-} from "./messages/solver-refund";
+} from "./messages/v2.1/solver-refund";
 
 import {
   SolverFillMessage,
   SolverFillStatus,
   getSolverFillMessageId,
-} from "./messages/solver-fill";
+} from "./messages/v2.1/solver-fill";
+
+import {
+  ActionType,
+  ExecutionMessage,
+  getExecutionMessageId,
+  encodeAction,
+  decodeAction,
+} from "./messages/v2.2/execution";
 
 import {
   VmType,
@@ -54,6 +62,16 @@ export {
   encodeOrderExtraData,
   decodeOrderExtraData,
   getOrderId,
+
+  // Utils
+  VmType,
+  decodeAddress,
+  decodeTransactionId,
+  encodeAddress,
+  encodeBytes,
+  encodeTransactionId,
+
+  // Messages v2.1
 
   // DepositoryDeposit
   DepositoryDepositMessage,
@@ -81,11 +99,12 @@ export {
   SolverFillStatus,
   getSolverFillMessageId,
 
-  // Utils
-  VmType,
-  decodeAddress,
-  decodeTransactionId,
-  encodeAddress,
-  encodeBytes,
-  encodeTransactionId,
+  // Messages v2.2
+
+  // Execution
+  ExecutionMessage,
+  ActionType,
+  getExecutionMessageId,
+  encodeAction,
+  decodeAction,
 };

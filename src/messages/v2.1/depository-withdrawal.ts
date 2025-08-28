@@ -19,9 +19,9 @@ import {
   encodeBytes,
   getChainVmType,
   VmType,
-} from "../utils";
+} from "../../utils";
 
-import { RelayDepositoryIdl } from "./common/solana-vm/idls/RelayDepositoryIdl";
+import { RelayDepositoryIdl } from "../common/solana-vm/idls/RelayDepositoryIdl";
 
 export enum DepositoryWithdrawalStatus {
   PENDING = 0,

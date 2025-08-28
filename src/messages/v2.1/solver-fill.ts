@@ -1,19 +1,19 @@
 import { bytesToHex, hashStruct } from "viem";
 
-import { normalizeOrder, Order, ORDER_EIP712_TYPES } from "../order";
+import { normalizeOrder, Order, ORDER_EIP712_TYPES } from "../../order";
 import {
   ChainIdToVmType,
   encodeBytes,
   encodeTransactionId,
   getChainVmType,
-} from "../utils";
+} from "../../utils";
 
-export enum SolverRefundStatus {
+export enum SolverFillStatus {
   FAILED = 0,
   SUCCESSFUL = 1,
 }
 
-export type SolverRefundMessage = {
+export type SolverFillMessage = {
   data: {
     order: Order;
     orderSignature: string;
@@ -22,28 +22,26 @@ export type SolverRefundMessage = {
       onchainId: string;
       inputIndex: number;
     }[];
-    refunds: {
+    fill: {
       transactionId: string;
-      inputIndex: number;
-      refundIndex: number;
-    }[];
+    };
   };
   result: {
     orderId: string;
-    status: SolverRefundStatus;
+    status: SolverFillStatus;
     totalWeightedInputPaymentBpsDiff: string;
   };
 };
 
-export const getSolverRefundMessageId = (
-  message: SolverRefundMessage,
+export const getSolverFillMessageId = (
+  message: SolverFillMessage,
   chainsConfig: ChainIdToVmType
 ) => {
   const vmType = (chainId: string) => getChainVmType(chainId, chainsConfig);
 
   return hashStruct({
     types: {
-      SolverRefund: [
+      SolverFill: [
         { name: "data", type: "Data" },
         { name: "result", type: "Result" },
       ],
@@ -51,7 +49,7 @@ export const getSolverRefundMessageId = (
         { name: "order", type: "Order" },
         { name: "orderSignature", type: "bytes" },
         { name: "inputs", type: "InputEntry[]" },
-        { name: "refunds", type: "RefundEntry[]" },
+        { name: "fill", type: "FillEntry" },
       ],
       Result: [
         { name: "orderId", type: "bytes32" },
@@ -64,13 +62,9 @@ export const getSolverRefundMessageId = (
         { name: "onchainId", type: "bytes32" },
         { name: "inputIndex", type: "uint32" },
       ],
-      RefundEntry: [
-        { name: "transactionId", type: "bytes" },
-        { name: "inputIndex", type: "uint32" },
-        { name: "refundIndex", type: "uint32" },
-      ],
+      FillEntry: [{ name: "transactionId", type: "bytes" }],
     },
-    primaryType: "SolverRefund",
+    primaryType: "SolverFill",
     data: {
       data: {
         order: normalizeOrder(message.data.order, chainsConfig),
@@ -83,18 +77,12 @@ export const getSolverRefundMessageId = (
           onchainId: bytesToHex(encodeBytes(input.onchainId)),
           inputIndex: input.inputIndex,
         })),
-        refunds: message.data.refunds.map((refund) => ({
+        fill: {
           transactionId: encodeTransactionId(
-            refund.transactionId,
-            vmType(
-              message.data.order.inputs[refund.inputIndex].refunds[
-                refund.refundIndex
-              ].chainId
-            )
+            message.data.fill.transactionId,
+            vmType(message.data.order.output.chainId)
           ),
-          inputIndex: refund.inputIndex,
-          refundIndex: refund.refundIndex,
-        })),
+        },
       },
       result: {
         orderId: bytesToHex(encodeBytes(message.result.orderId)),

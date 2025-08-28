@@ -6,7 +6,7 @@ import {
   encodeBytes,
   encodeTransactionId,
   getChainVmType,
-} from "../utils";
+} from "../../utils";
 
 export type DepositoryDepositMessage = {
   data: {
