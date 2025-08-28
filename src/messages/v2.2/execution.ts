@@ -81,24 +81,24 @@ export const encodeAction = (action: DecodedAction): string => {
     case ActionType.MINT: {
       return encodeAbiParameters(
         parseAbiParameters([
-          "(uint8 type)",
-          "(string currencyVmType)",
-          "(uint256 currencyChainId)",
-          "(string currency)",
-          "(string toVmType)",
-          "(uint256 toChainId)",
-          "(string to)",
-          "(uint256 amount)",
+          "uint8 type",
+          "string currencyVmType",
+          "uint256 currencyChainId",
+          "string currency",
+          "string toVmType",
+          "uint256 toChainId",
+          "string to",
+          "uint256 amount",
         ]),
         [
-          { type: action.type },
-          { currencyVmType: action.data.currencyVmType },
-          { currencyChainId: BigInt(action.data.currencyChainId) },
-          { currency: action.data.currency },
-          { toVmType: action.data.toVmType },
-          { toChainId: BigInt(action.data.toChainId) },
-          { to: action.data.to },
-          { amount: BigInt(action.data.amount) },
+          action.type,
+          action.data.currencyVmType,
+          BigInt(action.data.currencyChainId),
+          action.data.currency,
+          action.data.toVmType,
+          BigInt(action.data.toChainId),
+          action.data.to,
+          BigInt(action.data.amount),
         ]
       );
     }
@@ -106,24 +106,24 @@ export const encodeAction = (action: DecodedAction): string => {
     case ActionType.BURN: {
       return encodeAbiParameters(
         parseAbiParameters([
-          "(uint8 type)",
-          "(string currencyVmType)",
-          "(uint256 currencyChainId)",
-          "(string currency)",
-          "(string fromVmType)",
-          "(uint256 fromChainId)",
-          "(string from)",
-          "(uint256 amount)",
+          "uint8 type",
+          "string currencyVmType",
+          "uint256 currencyChainId",
+          "string currency",
+          "string fromVmType",
+          "uint256 fromChainId",
+          "string from",
+          "uint256 amount",
         ]),
         [
-          { type: action.type },
-          { currencyVmType: action.data.currencyVmType },
-          { currencyChainId: BigInt(action.data.currencyChainId) },
-          { currency: action.data.currency },
-          { fromVmType: action.data.fromVmType },
-          { fromChainId: BigInt(action.data.fromChainId) },
-          { from: action.data.from },
-          { amount: BigInt(action.data.amount) },
+          action.type,
+          action.data.currencyVmType,
+          BigInt(action.data.currencyChainId),
+          action.data.currency,
+          action.data.fromVmType,
+          BigInt(action.data.fromChainId),
+          action.data.from,
+          BigInt(action.data.amount),
         ]
       );
     }
@@ -131,30 +131,30 @@ export const encodeAction = (action: DecodedAction): string => {
     case ActionType.TRANSFER: {
       return encodeAbiParameters(
         parseAbiParameters([
-          "(uint8 type)",
-          "(string currencyVmType)",
-          "(uint256 currencyChainId)",
-          "(string currency)",
-          "(string fromVmType)",
-          "(uint256 fromChainId)",
-          "(string from)",
-          "(string toVmType)",
-          "(uint256 toChainId)",
-          "(string to)",
-          "(uint256 amount)",
+          "uint8 type",
+          "string currencyVmType",
+          "uint256 currencyChainId",
+          "string currency",
+          "string fromVmType",
+          "uint256 fromChainId",
+          "string from",
+          "string toVmType",
+          "uint256 toChainId",
+          "string to",
+          "uint256 amount",
         ]),
         [
-          { type: action.type },
-          { currencyVmType: action.data.currencyVmType },
-          { currencyChainId: BigInt(action.data.currencyChainId) },
-          { currency: action.data.currency },
-          { fromVmType: action.data.fromVmType },
-          { fromChainId: BigInt(action.data.fromChainId) },
-          { from: action.data.from },
-          { toVmType: action.data.toVmType },
-          { toChainId: BigInt(action.data.toChainId) },
-          { to: action.data.to },
-          { amount: BigInt(action.data.amount) },
+          action.type,
+          action.data.currencyVmType,
+          BigInt(action.data.currencyChainId),
+          action.data.currency,
+          action.data.fromVmType,
+          BigInt(action.data.fromChainId),
+          action.data.from,
+          action.data.toVmType,
+          BigInt(action.data.toChainId),
+          action.data.to,
+          BigInt(action.data.amount),
         ]
       );
     }
@@ -171,14 +171,14 @@ export const decodeAction = (action: string): DecodedAction => {
     case ActionType.MINT: {
       const result = decodeAbiParameters(
         parseAbiParameters([
-          "(uint8 type)",
-          "(string currencyVmType)",
-          "(uint256 currencyChainId)",
-          "(string currency)",
-          "(string toVmType)",
-          "(uint256 toChainId)",
-          "(string to)",
-          "(uint256 amount)",
+          "uint8 type",
+          "string currencyVmType",
+          "uint256 currencyChainId",
+          "string currency",
+          "string toVmType",
+          "uint256 toChainId",
+          "string to",
+          "uint256 amount",
         ]),
         action as Hex
       );
@@ -186,13 +186,13 @@ export const decodeAction = (action: string): DecodedAction => {
       return {
         type: ActionType.MINT,
         data: {
-          currencyVmType: result[1].currencyVmType as VmType,
-          currencyChainId: result[2].currencyChainId.toString(),
-          currency: result[3].currency,
-          toVmType: result[4].toVmType as VmType,
-          toChainId: result[5].toChainId.toString(),
-          to: result[6].to,
-          amount: result[7].amount.toString(),
+          currencyVmType: result[1] as VmType,
+          currencyChainId: result[2].toString(),
+          currency: result[3],
+          toVmType: result[4] as VmType,
+          toChainId: result[5].toString(),
+          to: result[6],
+          amount: result[7].toString(),
         },
       };
     }
@@ -200,14 +200,14 @@ export const decodeAction = (action: string): DecodedAction => {
     case ActionType.BURN: {
       const result = decodeAbiParameters(
         parseAbiParameters([
-          "(uint8 type)",
-          "(string currencyVmType)",
-          "(uint256 currencyChainId)",
-          "(string currency)",
-          "(string fromVmType)",
-          "(uint256 fromChainId)",
-          "(string from)",
-          "(uint256 amount)",
+          "uint8 type",
+          "string currencyVmType",
+          "uint256 currencyChainId",
+          "string currency",
+          "string fromVmType",
+          "uint256 fromChainId",
+          "string from",
+          "uint256 amount",
         ]),
         action as Hex
       );
@@ -215,13 +215,13 @@ export const decodeAction = (action: string): DecodedAction => {
       return {
         type: ActionType.BURN,
         data: {
-          currencyVmType: result[1].currencyVmType as VmType,
-          currencyChainId: result[2].currencyChainId.toString(),
-          currency: result[3].currency,
-          fromVmType: result[4].fromVmType as VmType,
-          fromChainId: result[5].fromChainId.toString(),
-          from: result[6].from,
-          amount: result[7].amount.toString(),
+          currencyVmType: result[1] as VmType,
+          currencyChainId: result[2].toString(),
+          currency: result[3],
+          fromVmType: result[4] as VmType,
+          fromChainId: result[5].toString(),
+          from: result[6],
+          amount: result[7].toString(),
         },
       };
     }
@@ -229,17 +229,17 @@ export const decodeAction = (action: string): DecodedAction => {
     case ActionType.TRANSFER: {
       const result = decodeAbiParameters(
         parseAbiParameters([
-          "(uint8 type)",
-          "(string currencyVmType)",
-          "(uint256 currencyChainId)",
-          "(string currency)",
-          "(string fromVmType)",
-          "(uint256 fromChainId)",
-          "(string from)",
-          "(string toVmType)",
-          "(uint256 toChainId)",
-          "(string to)",
-          "(uint256 amount)",
+          "uint8 type",
+          "string currencyVmType",
+          "uint256 currencyChainId",
+          "string currency",
+          "string fromVmType",
+          "uint256 fromChainId",
+          "string from",
+          "string toVmType",
+          "uint256 toChainId",
+          "string to",
+          "uint256 amount",
         ]),
         action as Hex
       );
@@ -247,16 +247,16 @@ export const decodeAction = (action: string): DecodedAction => {
       return {
         type: ActionType.TRANSFER,
         data: {
-          currencyVmType: result[1].currencyVmType as VmType,
-          currencyChainId: result[2].currencyChainId.toString(),
-          currency: result[3].currency,
-          fromVmType: result[4].fromVmType as VmType,
-          fromChainId: result[5].fromChainId.toString(),
-          from: result[6].from,
-          toVmType: result[7].toVmType as VmType,
-          toChainId: result[8].toChainId.toString(),
-          to: result[9].to,
-          amount: result[10].amount.toString(),
+          currencyVmType: result[1] as VmType,
+          currencyChainId: result[2].toString(),
+          currency: result[3],
+          fromVmType: result[4] as VmType,
+          fromChainId: result[5].toString(),
+          from: result[6],
+          toVmType: result[7] as VmType,
+          toChainId: result[8].toString(),
+          to: result[9],
+          amount: result[10].toString(),
         },
       };
     }
