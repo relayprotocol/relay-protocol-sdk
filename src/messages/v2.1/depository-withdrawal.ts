@@ -18,6 +18,7 @@ import {
   encodeAddress,
   encodeBytes,
   getChainVmType,
+  getVmTypeNativeCurrency,
   VmType,
 } from "../../utils";
 
@@ -391,5 +392,30 @@ export const getDecodedWithdrawalId = (
 
     default:
       throw new Error("Unsupported vm type");
+  }
+};
+
+export const getDecodedWithdrawalCurrency = (
+  decodedWithdrawal: DecodedWithdrawal
+): string => {
+  switch (decodedWithdrawal.vmType) {
+    case "bitcoin-vm": {
+      return getVmTypeNativeCurrency(decodedWithdrawal.vmType);
+    }
+
+    case "ethereum-vm": {
+      const firstCall = decodedWithdrawal.withdrawal.calls[0];
+      return firstCall.data === "0x"
+        ? getVmTypeNativeCurrency(decodedWithdrawal.vmType)
+        : firstCall.to;
+    }
+
+    case "solana-vm": {
+      return decodedWithdrawal.withdrawal.token;
+    }
+
+    case "sui-vm": {
+      return decodedWithdrawal.withdrawal.coinType;
+    }
   }
 };

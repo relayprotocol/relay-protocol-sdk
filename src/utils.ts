@@ -25,6 +25,23 @@ export const getChainVmType = (
   return chainsConfig[chainId];
 };
 
+// Native currencies
+
+export const getVmTypeNativeCurrency = (vmType: VmType) => {
+  switch (vmType) {
+    case "bitcoin-vm":
+      return "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqmql8k8";
+    case "ethereum-vm":
+      return "0x0000000000000000000000000000000000000000";
+    case "hyperliquid-vm":
+      return "0x00000000000000000000000000000000";
+    case "solana-vm":
+      return "11111111111111111111111111111111";
+    default:
+      throw new Error(`Native currency not available for vm type ${vmType}`);
+  }
+};
+
 // Bytes encoding
 
 export const encodeBytes = (bytes: string) => hexToBytes(bytes as Hex);
