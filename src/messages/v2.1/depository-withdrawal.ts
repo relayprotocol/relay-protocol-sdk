@@ -3,6 +3,7 @@ import { BorshCoder, Idl } from "@coral-xyz/anchor";
 import { bcs } from "@mysten/sui/bcs";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { sha256 } from "js-sha256";
+import * as tronweb from "tronweb";
 import {
   Address,
   bytesToHex,
@@ -12,7 +13,6 @@ import {
   Hex,
   parseAbiParameters,
 } from "viem";
-import * as tronweb from "tronweb";
 
 import {
   ChainIdToVmType,
@@ -174,20 +174,24 @@ export const encodeWithdrawal = (
     }
 
     case "tron-vm": {
-      const callsArray = decodedWithdrawal.withdrawal.calls.map(c => ([
+      const callsArray = decodedWithdrawal.withdrawal.calls.map((c) => [
         c.to.replace(tronweb.utils.address.ADDRESS_PREFIX, "0x"),
         c.data,
         BigInt(c.value),
-        !!c.allowFailure
-      ]));
-      
-      const types = ["tuple(tuple(address,bytes,uint256,bool)[],uint256,uint256)"];
-      const values = [[
-        callsArray,
-        BigInt(decodedWithdrawal.withdrawal.nonce),
-        BigInt(decodedWithdrawal.withdrawal.expiration)
-      ]];
-      
+        Boolean(c.allowFailure),
+      ]);
+
+      const types = [
+        "tuple(tuple(address,bytes,uint256,bool)[],uint256,uint256)",
+      ];
+      const values = [
+        [
+          callsArray,
+          BigInt(decodedWithdrawal.withdrawal.nonce),
+          BigInt(decodedWithdrawal.withdrawal.expiration),
+        ],
+      ];
+
       return tronweb.utils.abi.encodeParams(types, values);
     }
 
@@ -277,18 +281,26 @@ export const decodeWithdrawal = (
     }
 
     case "tron-vm": {
-      const types = ["tuple(tuple(address,bytes,uint256,bool)[],uint256,uint256)"];
-      const decoded = tronweb.utils.abi.decodeParams([], types, encodedWithdrawal);
+      const types = [
+        "tuple(tuple(address,bytes,uint256,bool)[],uint256,uint256)",
+      ];
+      const decoded = tronweb.utils.abi.decodeParams(
+        [],
+        types,
+        encodedWithdrawal
+      );
       const [argTuple] = decoded;
       const [decodedCalls, decodedNonce, decodedExpiration] = argTuple;
       return {
         vmType: "tron-vm",
         withdrawal: {
           calls: decodedCalls.map(([to, data, value, allowFailure]: any) => ({
-            to: to.toLowerCase().replace("0x", tronweb.utils.address.ADDRESS_PREFIX),
+            to: to
+              .toLowerCase()
+              .replace("0x", tronweb.utils.address.ADDRESS_PREFIX),
             data: data.toLowerCase(),
             value: BigInt(value).toString(),
-            allowFailure: Boolean(allowFailure)
+            allowFailure: Boolean(allowFailure),
           })),
           nonce: BigInt(decodedNonce).toString(),
           expiration: Number(BigInt(decodedExpiration).toString()),
@@ -388,23 +400,27 @@ export const getDecodedWithdrawalId = (
     }
 
     case "tron-vm": {
-      return tronweb.utils._TypedDataEncoder.hashStruct('CallRequest', {
-        CallRequest: [
-          { name: 'calls', type: 'Call[]' },
-          { name: 'nonce', type: 'uint256' },
-          { name: 'expiration', type: 'uint256' }
-        ],
-        Call: [
-          { name: 'to', type: 'address' },
-          { name: 'data', type: 'bytes' },
-          { name: 'value', type: 'uint256' },
-          { name: 'allowFailure', type: 'bool' }
-        ]
-      }, {
-        calls: decodedWithdrawal.withdrawal.calls,
-        nonce: decodedWithdrawal.withdrawal.nonce,
-        expiration: decodedWithdrawal.withdrawal.expiration,
-      });
+      return tronweb.utils._TypedDataEncoder.hashStruct(
+        "CallRequest",
+        {
+          CallRequest: [
+            { name: "calls", type: "Call[]" },
+            { name: "nonce", type: "uint256" },
+            { name: "expiration", type: "uint256" },
+          ],
+          Call: [
+            { name: "to", type: "address" },
+            { name: "data", type: "bytes" },
+            { name: "value", type: "uint256" },
+            { name: "allowFailure", type: "bool" },
+          ],
+        },
+        {
+          calls: decodedWithdrawal.withdrawal.calls,
+          nonce: decodedWithdrawal.withdrawal.nonce,
+          expiration: decodedWithdrawal.withdrawal.expiration,
+        }
+      );
     }
 
     case "solana-vm": {
