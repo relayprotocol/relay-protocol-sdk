@@ -1,6 +1,6 @@
 {
   "name": "@reservoir0x/relay-protocol-sdk",
-  "version": "0.0.40",
+  "version": "0.0.41",
   "description": "Relay protocol SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -23,6 +23,7 @@
     "bitcoinjs-lib": "^6.1.7",
     "bs58": "^6.0.0",
     "js-sha256": "^0.11.0",
+    "tronweb": "^6.0.4",
     "viem": "^2.26.3"
   },
   "files": [

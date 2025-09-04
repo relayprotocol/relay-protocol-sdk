@@ -2,6 +2,7 @@ import { bytesToHex, Hex, hexToBytes } from "viem";
 import { bech32, bech32m } from "bech32";
 import * as bitcoin from "bitcoinjs-lib";
 import bs58 from "bs58";
+import * as tronweb from "tronweb";
 
 export type VmType =
   | "bitcoin-vm"
@@ -37,6 +38,8 @@ export const getVmTypeNativeCurrency = (vmType: VmType) => {
       return "0x00000000000000000000000000000000";
     case "solana-vm":
       return "11111111111111111111111111111111";
+    case "tron-vm":
+      return "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb";
     default:
       throw new Error(`Native currency not available for vm type ${vmType}`);
   }
@@ -108,7 +111,7 @@ export const encodeAddress = (address: string, vmType: VmType): Uint8Array => {
     }
 
     case "tron-vm": {
-      throw new Error("Vm type not implemented (encodeAddress)");
+      return hexToBytes(`0x${tronweb.utils.address.toHex(address)}`);
     }
   }
 };
@@ -158,11 +161,11 @@ export const decodeAddress = (address: Uint8Array, vmType: VmType): string => {
     }
 
     case "ton-vm": {
-      throw new Error("Vm type not implemented (encodeAddress)");
+      throw new Error("Vm type not implemented (decodeAddress)");
     }
 
     case "tron-vm": {
-      throw new Error("Vm type not implemented (encodeAddress)");
+      return tronweb.utils.address.fromHex(bytesToHex(address).slice(2));
     }
   }
 };
@@ -199,7 +202,7 @@ export const encodeTransactionId = (
     }
 
     case "tron-vm": {
-      throw new Error("Vm type not implemented (encodeTransactionId)");
+      return hexToBytes(`0x${transactionId}`);
     }
   }
 };
@@ -234,7 +237,7 @@ export const decodeTransactionId = (
     }
 
     case "tron-vm": {
-      throw new Error("Vm type not implemented (decodeTransactionId)");
+      return bytesToHex(transactionId).slice(2);
     }
   }
 };

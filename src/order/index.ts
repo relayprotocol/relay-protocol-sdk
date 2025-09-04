@@ -1,3 +1,4 @@
+import * as tronweb from "tronweb";
 import {
   Address,
   decodeAbiParameters,
@@ -243,12 +244,14 @@ export const decodeOrderCall = (call: string, vmType: VmType): DecodedCall => {
   }
 };
 
-type DecodedExtraData = {
+type DecodedExtraDataEthereumVm = {
   vmType: "ethereum-vm";
   extraData: {
     fillContract: string;
   };
 };
+
+type DecodedExtraData = DecodedExtraDataEthereumVm;
 
 export const encodeOrderExtraData = (extraData: DecodedExtraData): string => {
   switch (extraData.vmType) {
