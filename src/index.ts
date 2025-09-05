@@ -52,6 +52,7 @@ import {
   encodeAddress,
   encodeBytes,
   encodeTransactionId,
+  getVmTypeNativeCurrency,
 } from "./utils";
 
 export {
@@ -70,6 +71,7 @@ export {
   encodeAddress,
   encodeBytes,
   encodeTransactionId,
+  getVmTypeNativeCurrency,
 
   // Messages v2.1
 
