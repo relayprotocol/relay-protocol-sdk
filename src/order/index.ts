@@ -251,7 +251,14 @@ type DecodedExtraDataEthereumVm = {
   };
 };
 
-type DecodedExtraData = DecodedExtraDataEthereumVm;
+type DecodedExtraDataTronVm = {
+  vmType: "tron-vm";
+  extraData: {
+    fillContract: string;
+  };
+};
+
+type DecodedExtraData = DecodedExtraDataEthereumVm | DecodedExtraDataTronVm;
 
 export const encodeOrderExtraData = (extraData: DecodedExtraData): string => {
   switch (extraData.vmType) {
@@ -259,6 +266,13 @@ export const encodeOrderExtraData = (extraData: DecodedExtraData): string => {
       return encodeAbiParameters(
         parseAbiParameters(["(address fillContract)"]),
         [{ fillContract: extraData.extraData.fillContract as Address }]
+      );
+    }
+
+    case "tron-vm": {
+      return tronweb.utils.abi.encodeParams(
+        ["address"],
+        [extraData.extraData.fillContract]
       );
     }
 
@@ -283,6 +297,24 @@ export const decodeOrderExtraData = (
           vmType: "ethereum-vm",
           extraData: {
             fillContract: result[0].fillContract.toLowerCase(),
+          },
+        };
+      } catch {
+        throw new Error("Failed to decode extra data");
+      }
+    }
+
+    case "tron-vm": {
+      try {
+        const result = tronweb.utils.abi.decodeParams(
+          ["fillContract"],
+          ["address"],
+          extraData
+        );
+        return {
+          vmType: "tron-vm",
+          extraData: {
+            fillContract: tronweb.utils.address.fromHex(result.fillContract),
           },
         };
       } catch {
