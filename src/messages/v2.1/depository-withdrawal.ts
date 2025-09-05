@@ -174,12 +174,12 @@ export const encodeWithdrawal = (
     }
 
     case "tron-vm": {
-      const callsArray = decodedWithdrawal.withdrawal.calls.map(c => ([
+      const callsArray = decodedWithdrawal.withdrawal.calls.map((c) => [
         c.to.replace(tronweb.utils.address.ADDRESS_PREFIX_REGEX, "0x"),
         c.data,
         BigInt(c.value),
         Boolean(c.allowFailure),
-      ]));
+      ]);
 
       const types = [
         "tuple(tuple(address,bytes,uint256,bool)[],uint256,uint256)",
