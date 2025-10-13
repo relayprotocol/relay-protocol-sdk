@@ -140,7 +140,7 @@ export const decodeAction = (action: string): DecodedAction => {
       return {
         type: ActionType.MINT,
         data: {
-          hubToAddress: result[1].toString() as `0x${string}`,
+          hubToAddress: result[1].toString(),
           hubTokenId: result[2].toString(),
           amount: result[3].toString(),
         },
@@ -161,7 +161,7 @@ export const decodeAction = (action: string): DecodedAction => {
       return {
         type: ActionType.BURN,
         data: {
-          hubFromAddress: result[1].toString() as `0x${string}`,
+          hubFromAddress: result[1].toString(),
           hubTokenId: result[2].toString(),
           amount: result[3].toString(),
         },
@@ -183,8 +183,8 @@ export const decodeAction = (action: string): DecodedAction => {
       return {
         type: ActionType.TRANSFER,
         data: {
-          hubFromAddress: result[1].toString() as `0x${string}`,
-          hubToAddress: result[2].toString() as `0x${string}`,
+          hubFromAddress: result[1].toString(),
+          hubToAddress: result[2].toString(),
           hubTokenId: result[3].toString(),
           amount: result[4].toString(),
         },
