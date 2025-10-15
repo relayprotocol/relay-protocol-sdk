@@ -40,7 +40,7 @@ export type DecodedAction =
       type: ActionType.MINT;
       data: {
         hubToAddress: string;
-        hubTokenId: string;
+        hubTokenId: bigint;
         amount: string;
       };
     }
@@ -48,7 +48,7 @@ export type DecodedAction =
       type: ActionType.BURN;
       data: {
         hubFromAddress: string;
-        hubTokenId: string;
+        hubTokenId: bigint;
         amount: string;
       };
     }
@@ -57,7 +57,7 @@ export type DecodedAction =
       data: {
         hubFromAddress: string;
         hubToAddress: string;
-        hubTokenId: string;
+        hubTokenId: bigint;
         amount: string;
       };
     };
@@ -141,7 +141,7 @@ export const decodeAction = (action: string): DecodedAction => {
         type: ActionType.MINT,
         data: {
           hubToAddress: result[1].toString(),
-          hubTokenId: result[2].toString(),
+          hubTokenId: result[2],
           amount: result[3].toString(),
         },
       };
@@ -162,7 +162,7 @@ export const decodeAction = (action: string): DecodedAction => {
         type: ActionType.BURN,
         data: {
           hubFromAddress: result[1].toString(),
-          hubTokenId: result[2].toString(),
+          hubTokenId: result[2],
           amount: result[3].toString(),
         },
       };
@@ -185,7 +185,7 @@ export const decodeAction = (action: string): DecodedAction => {
         data: {
           hubFromAddress: result[1].toString(),
           hubToAddress: result[2].toString(),
-          hubTokenId: result[3].toString(),
+          hubTokenId: result[3],
           amount: result[4].toString(),
         },
       };
