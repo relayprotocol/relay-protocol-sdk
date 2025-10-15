@@ -2,6 +2,9 @@ name: Test
 
 on:
   pull_request:
+  push:
+    branches:
+      - "main"
 
 jobs:
   run-tests:
@@ -34,3 +37,6 @@ jobs:
 
       - name: Run tests
         run: yarn test
+      
+      - name: Build
+        run: yarn build

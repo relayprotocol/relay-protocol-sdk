@@ -36,11 +36,11 @@ const actions = [
 describe("execution", () => {
   it("should encode and decode MINT action correctly", () => {
     const action = actions[0];
-    const encoded = encodeAction(action);
+    const encoded = encodeAction(action as any);
     const decoded = decodeAction(encoded);
 
     expect(decoded.type).toBe(ActionType.MINT);
-    expect(decoded.data.hubToAddress).toBe(action.data.hubToAddress);
+    expect("hubToAddress" in decoded.data && decoded.data.hubToAddress).toBe(action.data.hubToAddress);
     expect(decoded.data.hubTokenId).toBe(action.data.hubTokenId);
     expect(decoded.data.amount).toBe(action.data.amount);
   });
@@ -50,7 +50,7 @@ describe("execution", () => {
     const encoded = encodeAction(action as any);
     const decoded = decodeAction(encoded);
     expect(decoded.type).toBe(ActionType.BURN);
-    expect(decoded.data.hubFromAddress).toBe(action.data.hubFromAddress);
+    expect("hubFromAddress" in decoded.data && decoded.data.hubFromAddress).toBe(action.data.hubFromAddress);
     expect(decoded.data.hubTokenId).toBe(action.data.hubTokenId);
     expect(decoded.data.amount).toBe(action.data.amount);
   });
@@ -60,8 +60,8 @@ describe("execution", () => {
     const encoded = encodeAction(action as any);
     const decoded = decodeAction(encoded);
     expect(decoded.type).toBe(ActionType.TRANSFER);
-    expect(decoded.data.hubFromAddress).toBe(action.data.hubFromAddress);
-    expect(decoded.data.hubToAddress).toBe(action.data.hubToAddress);
+    expect("hubFromAddress" in decoded.data && decoded.data.hubFromAddress).toBe(action.data.hubFromAddress);
+    expect("hubToAddress" in decoded.data && decoded.data.hubToAddress).toBe(action.data.hubToAddress);
     expect(decoded.data.hubTokenId).toBe(action.data.hubTokenId);
     expect(decoded.data.amount).toBe(action.data.amount);
   });
