@@ -75,7 +75,7 @@ export const encodeAction = (action: DecodedAction): string => {
         [
           action.type,
           action.data.hubToAddress as `0x${string}`,
-          BigInt(action.data.hubTokenId),
+          action.data.hubTokenId,
           BigInt(action.data.amount),
         ]
       );
@@ -92,7 +92,7 @@ export const encodeAction = (action: DecodedAction): string => {
         [
           action.type,
           action.data.hubFromAddress as `0x${string}`,
-          BigInt(action.data.hubTokenId),
+          action.data.hubTokenId,
           BigInt(action.data.amount),
         ]
       );
@@ -111,7 +111,7 @@ export const encodeAction = (action: DecodedAction): string => {
           action.type,
           action.data.hubFromAddress as `0x${string}`,
           action.data.hubToAddress as `0x${string}`,
-          BigInt(action.data.hubTokenId),
+          action.data.hubTokenId,
           BigInt(action.data.amount),
         ]
       );
@@ -124,8 +124,13 @@ export const encodeAction = (action: DecodedAction): string => {
 };
 
 export const decodeAction = (action: string): DecodedAction => {
-  const type = action.slice(0, 4);
-  switch (Number(type)) {
+  // decode just the uint8 type 
+  const [ type ] = decodeAbiParameters(
+    parseAbiParameters(["uint8 type"]),
+    action as Hex
+  );
+  
+  switch (type) {
     case ActionType.MINT: {
       const result = decodeAbiParameters(
         parseAbiParameters([
