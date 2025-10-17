@@ -26,7 +26,7 @@ export type ExecutionMessageMetadata = {
 export type ExecutionMessage = {
   idempotencyKey: string;
   actions: string[];
-  metadata?: ExecutionMessageMetadata;
+  metadata?: ExecutionMessageMetadata[];
 };
 
 export const getExecutionMessageId = (message: ExecutionMessage) => {
