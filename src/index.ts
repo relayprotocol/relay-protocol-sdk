@@ -40,6 +40,7 @@ import {
 import {
   ActionType,
   ExecutionMessage,
+  ExecutionMessageMetadata,
   getExecutionMessageId,
   encodeAction,
   decodeAction,
@@ -105,6 +106,7 @@ export {
 
   // Execution
   ExecutionMessage,
+  ExecutionMessageMetadata,
   ActionType,
   getExecutionMessageId,
   encodeAction,

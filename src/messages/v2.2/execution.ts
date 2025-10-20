@@ -14,9 +14,19 @@ export enum ActionType {
   TRANSFER,
 }
 
+export type ExecutionMessageMetadata = {
+  hubTokenId: bigint;
+  origin: {
+    address: string;
+    chainId: bigint;
+    family: VmType;
+  };
+};
+
 export type ExecutionMessage = {
   idempotencyKey: string;
   actions: string[];
+  metadata?: ExecutionMessageMetadata[];
 };
 
 export const getExecutionMessageId = (message: ExecutionMessage) => {
@@ -124,12 +134,12 @@ export const encodeAction = (action: DecodedAction): string => {
 };
 
 export const decodeAction = (action: string): DecodedAction => {
-  // decode just the uint8 type 
-  const [ type ] = decodeAbiParameters(
+  // decode just the uint8 type
+  const [type] = decodeAbiParameters(
     parseAbiParameters(["uint8 type"]),
     action as Hex
   );
-  
+
   switch (type) {
     case ActionType.MINT: {
       const result = decodeAbiParameters(
