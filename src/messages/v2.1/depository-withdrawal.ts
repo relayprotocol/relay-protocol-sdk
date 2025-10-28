@@ -812,10 +812,20 @@ export const getDecodedWithdrawalCurrency = (
           return getVmTypeNativeCurrency("hyperliquid-vm");
         }
         
-        case "SpotSend":
-        case "SendAsset": {
-          // TODO: need align with the Solver part
+        case "SpotSend": {
           return parameters.token;
+        }
+        
+        case "SendAsset": {
+          // For SendAsset, construct currency in the format expected by solver
+          // Format: tokenContractAddress (34 chars) + dexName as hex
+          const tokenParts = parameters.token.split(':');
+          const tokenContract = tokenParts.length > 1 ? tokenParts[1] : parameters.token;
+          const dexHex = parameters.destinationDex === "spot" 
+            ? "" 
+            : Buffer.from(parameters.destinationDex, "ascii").toString("hex");
+          
+          return tokenContract + dexHex;
         }
         
         default:
