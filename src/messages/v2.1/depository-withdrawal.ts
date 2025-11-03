@@ -146,19 +146,11 @@ export type DecodedHyperliquidVmWithdrawal = {
   vmType: "hyperliquid-vm";
   withdrawal: {
     txType: number;
-    parameters: 
+    parameters:
       | {
           type: "UsdSend";
           hyperliquidChain: string;
           destination: string;
-          amount: string;
-          time: string;
-        }
-      | {
-          type: "SpotSend";
-          hyperliquidChain: string;
-          destination: string;
-          token: string;
           amount: string;
           time: string;
         }
@@ -284,14 +276,13 @@ export const encodeWithdrawal = (
 
     case "hyperliquid-vm": {
       const { txType, parameters } = decodedWithdrawal.withdrawal;
-      
+
       let encodedParameters: string;
-      
       switch (parameters.type) {
         case "UsdSend": {
           encodedParameters = encodeAbiParameters(
             parseAbiParameters([
-              "(string hyperliquidChain, string destination, string amount, uint64 time)"
+              "(string hyperliquidChain, string destination, string amount, uint64 time)",
             ]),
             [
               {
@@ -299,34 +290,17 @@ export const encodeWithdrawal = (
                 destination: parameters.destination,
                 amount: parameters.amount,
                 time: BigInt(parameters.time),
-              }
+              },
             ]
           );
+
           break;
         }
-        
-        case "SpotSend": {
-          encodedParameters = encodeAbiParameters(
-            parseAbiParameters([
-              "(string hyperliquidChain, string destination, string token, string amount, uint64 time)"
-            ]),
-            [
-              {
-                hyperliquidChain: parameters.hyperliquidChain,
-                destination: parameters.destination,
-                token: parameters.token,
-                amount: parameters.amount,
-                time: BigInt(parameters.time),
-              }
-            ]
-          );
-          break;
-        }
-        
+
         case "SendAsset": {
           encodedParameters = encodeAbiParameters(
             parseAbiParameters([
-              "(string hyperliquidChain, string destination, string sourceDex, string destinationDex, string token, string amount, string fromSubAccount, uint64 nonce)"
+              "(string hyperliquidChain, string destination, string sourceDex, string destinationDex, string token, string amount, string fromSubAccount, uint64 nonce)",
             ]),
             [
               {
@@ -338,25 +312,29 @@ export const encodeWithdrawal = (
                 amount: parameters.amount,
                 fromSubAccount: parameters.fromSubAccount,
                 nonce: BigInt(parameters.nonce),
-              }
+              },
             ]
           );
+
           break;
         }
-        
-        default:
-          throw new Error(`Unsupported Hyperliquid transaction type: ${(parameters as any).type}`);
+
+        default: {
+          throw new Error(
+            `Unsupported Hyperliquid transaction type ${
+              (parameters as any).type
+            }`
+          );
+        }
       }
-      
+
       return encodeAbiParameters(
-        parseAbiParameters([
-          "(uint8 txType, bytes parameters)"
-        ]),
+        parseAbiParameters(["(uint8 txType, bytes parameters)"]),
         [
           {
-            txType: txType,
+            txType,
             parameters: encodedParameters as Hex,
-          }
+          },
         ]
       );
     }
@@ -482,25 +460,25 @@ export const decodeWithdrawal = (
 
     case "hyperliquid-vm": {
       const result = decodeAbiParameters(
-        parseAbiParameters([
-          "(uint8 txType, bytes parameters)"
-        ]),
+        parseAbiParameters(["(uint8 txType, bytes parameters)"]),
         encodedWithdrawal as Hex
       );
 
       const { txType, parameters } = result[0];
 
       switch (txType) {
-        case 0: { // UsdSend
+        case 0: {
+          // UsdSend
           const paramResult = decodeAbiParameters(
             parseAbiParameters([
-              "(string hyperliquidChain, string destination, string amount, uint64 time)"
+              "(string hyperliquidChain, string destination, string amount, uint64 time)",
             ]),
             parameters
           );
-          
-          const { hyperliquidChain, destination, amount, time } = paramResult[0];
-          
+
+          const { hyperliquidChain, destination, amount, time } =
+            paramResult[0];
+
           return {
             vmType: "hyperliquid-vm",
             withdrawal: {
@@ -511,47 +489,31 @@ export const decodeWithdrawal = (
                 destination,
                 amount,
                 time: time.toString(),
-              }
-            }
+              },
+            },
           };
         }
 
-        case 1: { // SpotSend
+        case 1: {
+          // SendAsset
           const paramResult = decodeAbiParameters(
             parseAbiParameters([
-              "(string hyperliquidChain, string destination, string token, string amount, uint64 time)"
+              "(string hyperliquidChain, string destination, string sourceDex, string destinationDex, string token, string amount, string fromSubAccount, uint64 nonce)",
             ]),
             parameters
           );
-          
-          const { hyperliquidChain, destination, token, amount, time } = paramResult[0];
-          
-          return {
-            vmType: "hyperliquid-vm",
-            withdrawal: {
-              txType: Number(txType),
-              parameters: {
-                type: "SpotSend" as const,
-                hyperliquidChain,
-                destination,
-                token,
-                amount,
-                time: time.toString(),
-              }
-            }
-          };
-        }
 
-        case 2: { // SendAsset
-          const paramResult = decodeAbiParameters(
-            parseAbiParameters([
-              "(string hyperliquidChain, string destination, string sourceDex, string destinationDex, string token, string amount, string fromSubAccount, uint64 nonce)"
-            ]),
-            parameters
-          );
-          
-          const { hyperliquidChain, destination, sourceDex, destinationDex, token, amount, fromSubAccount, nonce } = paramResult[0];
-          
+          const {
+            hyperliquidChain,
+            destination,
+            sourceDex,
+            destinationDex,
+            token,
+            amount,
+            fromSubAccount,
+            nonce,
+          } = paramResult[0];
+
           return {
             vmType: "hyperliquid-vm",
             withdrawal: {
@@ -566,13 +528,16 @@ export const decodeWithdrawal = (
                 amount,
                 fromSubAccount,
                 nonce: nonce.toString(),
-              }
-            }
+              },
+            },
           };
         }
 
-        default:
-          throw new Error(`Unsupported Hyperliquid transaction type: ${txType}`);
+        default: {
+          throw new Error(
+            `Unsupported Hyperliquid transaction type: ${txType}`
+          );
+        }
       }
     }
 
@@ -692,7 +657,7 @@ export const getDecodedWithdrawalId = (
 
     case "hyperliquid-vm": {
       const { parameters } = decodedWithdrawal.withdrawal;
-      
+
       switch (parameters.type) {
         case "UsdSend": {
           return hashStruct({
@@ -708,28 +673,6 @@ export const getDecodedWithdrawalId = (
             data: {
               hyperliquidChain: parameters.hyperliquidChain,
               destination: parameters.destination,
-              amount: parameters.amount,
-              time: parameters.time,
-            },
-          });
-        }
-
-        case "SpotSend": {
-          return hashStruct({
-            types: {
-              "HyperliquidTransaction:SpotSend": [
-                { name: "hyperliquidChain", type: "string" },
-                { name: "destination", type: "string" },
-                { name: "token", type: "string" },
-                { name: "amount", type: "string" },
-                { name: "time", type: "uint64" },
-              ],
-            },
-            primaryType: "HyperliquidTransaction:SpotSend",
-            data: {
-              hyperliquidChain: parameters.hyperliquidChain,
-              destination: parameters.destination,
-              token: parameters.token,
               amount: parameters.amount,
               time: parameters.time,
             },
@@ -764,8 +707,13 @@ export const getDecodedWithdrawalId = (
           });
         }
 
-        default:
-          throw new Error(`Unsupported Hyperliquid transaction type: ${(parameters as any).type}`);
+        default: {
+          throw new Error(
+            `Unsupported Hyperliquid transaction type ${
+              (parameters as any).type
+            }`
+          );
+        }
       }
     }
 
@@ -806,30 +754,35 @@ export const getDecodedWithdrawalCurrency = (
 
     case "hyperliquid-vm": {
       const { parameters } = decodedWithdrawal.withdrawal;
-      
+
       switch (parameters.type) {
         case "UsdSend": {
-          return getVmTypeNativeCurrency("hyperliquid-vm");
+          return getVmTypeNativeCurrency(decodedWithdrawal.vmType);
         }
-        
-        case "SpotSend": {
-          return parameters.token;
-        }
-        
+
         case "SendAsset": {
-          // For SendAsset, construct currency in the format expected by solver
-          // Format: tokenContractAddress (34 chars) + dexName as hex
-          const tokenParts = parameters.token.split(':');
-          const tokenContract = tokenParts.length > 1 ? tokenParts[1] : parameters.token;
-          const dexHex = parameters.destinationDex === "spot" 
-            ? "" 
-            : Buffer.from(parameters.destinationDex, "ascii").toString("hex");
-          
-          return tokenContract + dexHex;
+          const SPOT_USDC = "0x6d1e7cde53ba9467b783cb7c530ce054";
+
+          const tokenAddress = parameters.token.split(":")[1].toLowerCase();
+          const tokenDex = parameters.sourceDex;
+          if (tokenDex === "" && tokenAddress !== SPOT_USDC) {
+            throw new Error("Only USDC is supported as a Perps token");
+          }
+
+          return tokenDex === "spot"
+            ? tokenAddress.toLowerCase()
+            : tokenDex === ""
+            ? getVmTypeNativeCurrency(decodedWithdrawal.vmType)
+            : tokenAddress.toLowerCase() +
+              Buffer.from(tokenDex, "ascii").toString("hex");
         }
-        
+
         default:
-          throw new Error(`Unsupported Hyperliquid transaction type: ${(parameters as any).type}`);
+          throw new Error(
+            `Unsupported Hyperliquid transaction type ${
+              (parameters as any).type
+            }`
+          );
       }
     }
   }
