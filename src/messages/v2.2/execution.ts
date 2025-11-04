@@ -21,6 +21,8 @@ export type ExecutionMessageMetadata = {
     chainId: bigint;
     family: VmType;
   };
+  oracleChainId: string;
+  oracleContract: `0x${string}`;
 };
 
 export type ExecutionMessage = {
