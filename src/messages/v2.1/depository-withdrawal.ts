@@ -4,6 +4,7 @@ import { bcs } from "@mysten/sui/bcs";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { sha256 } from "js-sha256";
 import * as tronweb from "tronweb";
+import * as bitcoin from "bitcoinjs-lib";
 import {
   Address,
   bytesToHex,
@@ -834,7 +835,20 @@ export const getDecodedWithdrawalAmount = (
     }
 
     case "bitcoin-vm": {
-      throw new Error("Bitcoin VM withdrawals decoding not implemented yet");
+      try {
+        const psbt = bitcoin.Psbt.fromHex(decodedWithdrawal.withdrawal.psbt);
+        const tx = psbt.extractTransaction(false);
+        const totalAmount = tx.outs.reduce((sum, output) => {
+          return sum + output.value;
+        }, 0);
+        return totalAmount.toString();
+      } catch (error) {
+        throw new Error(
+          `Failed to decode PSBT: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
     }
 
     case "hyperliquid-vm": {
