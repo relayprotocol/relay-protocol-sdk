@@ -789,16 +789,16 @@ export const getDecodedWithdrawalCurrency = (
   }
 };
 
-const decodeERC20TransferAmount = (data: string) => {
+const decodeERC20TransferParams = (data: string) => {
   // ERC20 / TRC20 `transfer(address,uint256)` selector is 0xa9059cbb
   const TRANSFER_SELECTOR = "0xa9059cbb";
   if (data.toLowerCase().startsWith(TRANSFER_SELECTOR.toLowerCase())) {
     const paramsData = ("0x" + data.slice(TRANSFER_SELECTOR.length)) as Hex;
-    const [amount] = decodeAbiParameters(
+    const params = decodeAbiParameters(
       parseAbiParameters(["address", "uint256"]),
       paramsData
     );
-    return amount;
+    return params;
   } else {
     throw new Error(`Unsupported function call data: ${data}`);
   }
@@ -813,7 +813,8 @@ export const getDecodedWithdrawalAmount = (
       if (firstCall.data === "0x") {
         return firstCall.value;
       } else {
-        return decodeERC20TransferAmount(firstCall.data);
+        const [, amount] = decodeERC20TransferParams(firstCall.data);
+        return amount.toString();
       }
     }
 
@@ -822,7 +823,8 @@ export const getDecodedWithdrawalAmount = (
       if (firstCall.data === "0x") {
         return firstCall.value;
       } else {
-        return decodeERC20TransferAmount(firstCall.data);
+        const [, amount] = decodeERC20TransferParams(firstCall.data);
+        return amount.toString();
       }
     }
 
@@ -853,6 +855,70 @@ export const getDecodedWithdrawalAmount = (
 
     case "hyperliquid-vm": {
       return decodedWithdrawal.withdrawal.parameters.amount;
+    }
+
+    default:
+      throw new Error("Unsupported vm type");
+  }
+};
+
+export const getDecodedWithdrawalRecipient = (
+  decodedWithdrawal: DecodedWithdrawal
+): string => {
+  switch (decodedWithdrawal.vmType) {
+    case "ethereum-vm": {
+      const firstCall = decodedWithdrawal.withdrawal.calls[0];
+      if (firstCall.data === "0x") {
+        return firstCall.to;
+      } else {
+        const [to] = decodeERC20TransferParams(firstCall.data);
+        return to;
+      }
+    }
+
+    case "tron-vm": {
+      const firstCall = decodedWithdrawal.withdrawal.calls[0];
+      if (firstCall.data === "0x") {
+        return firstCall.to;
+      } else {
+        const [to] = decodeERC20TransferParams(firstCall.data);
+        return to;
+      }
+    }
+
+    case "solana-vm": {
+      return decodedWithdrawal.withdrawal.recipient;
+    }
+
+    case "sui-vm": {
+      return decodedWithdrawal.withdrawal.recipient;
+    }
+
+    case "bitcoin-vm": {
+      try {
+        const psbt = bitcoin.Psbt.fromHex(decodedWithdrawal.withdrawal.psbt);
+        const tx = psbt.extractTransaction(false);
+        if (tx.outs.length === 0) {
+          throw new Error("Transaction has no outputs");
+        }
+        // Extract address from the first output
+        const firstOutput = tx.outs[0];
+        const address = bitcoin.address.fromOutputScript(
+          firstOutput.script,
+          bitcoin.networks.bitcoin
+        );
+        return address;
+      } catch (error) {
+        throw new Error(
+          `Failed to decode PSBT: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
+    }
+
+    case "hyperliquid-vm": {
+      return decodedWithdrawal.withdrawal.parameters.destination;
     }
 
     default:
