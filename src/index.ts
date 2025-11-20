@@ -25,6 +25,7 @@ import {
   decodeWithdrawal,
   getDecodedWithdrawalId,
   getDecodedWithdrawalCurrency,
+  getDecodedWithdrawalAmount,
 } from "./messages/v2.1/depository-withdrawal";
 
 import {
@@ -95,6 +96,7 @@ export {
   decodeWithdrawal,
   getDecodedWithdrawalId,
   getDecodedWithdrawalCurrency,
+  getDecodedWithdrawalAmount,
 
   // SolverRefund
   SolverRefundMessage,

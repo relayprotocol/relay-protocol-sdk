@@ -4,6 +4,7 @@ import { bcs } from "@mysten/sui/bcs";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { sha256 } from "js-sha256";
 import * as tronweb from "tronweb";
+import * as bitcoin from "bitcoinjs-lib";
 import {
   Address,
   bytesToHex,
@@ -785,5 +786,76 @@ export const getDecodedWithdrawalCurrency = (
           );
       }
     }
+  }
+};
+
+const decodeERC20TransferAmount = (data: string) => {
+  // ERC20 / TRC20 `transfer(address,uint256)` selector is 0xa9059cbb
+  const TRANSFER_SELECTOR = "0xa9059cbb";
+  if (data.toLowerCase().startsWith(TRANSFER_SELECTOR.toLowerCase())) {
+    const paramsData = ("0x" + data.slice(TRANSFER_SELECTOR.length)) as Hex;
+    const [amount] = decodeAbiParameters(
+      parseAbiParameters(["address", "uint256"]),
+      paramsData
+    );
+    return amount;
+  } else {
+    throw new Error(`Unsupported function call data: ${data}`);
+  }
+};
+
+export const getDecodedWithdrawalAmount = (
+  decodedWithdrawal: DecodedWithdrawal
+): string => {
+  switch (decodedWithdrawal.vmType) {
+    case "ethereum-vm": {
+      const firstCall = decodedWithdrawal.withdrawal.calls[0];
+      if (firstCall.data === "0x") {
+        return firstCall.value;
+      } else {
+        return decodeERC20TransferAmount(firstCall.data);
+      }
+    }
+
+    case "tron-vm": {
+      const firstCall = decodedWithdrawal.withdrawal.calls[0];
+      if (firstCall.data === "0x") {
+        return firstCall.value;
+      } else {
+        return decodeERC20TransferAmount(firstCall.data);
+      }
+    }
+
+    case "solana-vm": {
+      return decodedWithdrawal.withdrawal.amount;
+    }
+
+    case "sui-vm": {
+      return decodedWithdrawal.withdrawal.amount;
+    }
+
+    case "bitcoin-vm": {
+      try {
+        const psbt = bitcoin.Psbt.fromHex(decodedWithdrawal.withdrawal.psbt);
+        const tx = psbt.extractTransaction(false);
+        const totalAmount = tx.outs.reduce((sum, output) => {
+          return sum + output.value;
+        }, 0);
+        return totalAmount.toString();
+      } catch (error) {
+        throw new Error(
+          `Failed to decode PSBT: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
+    }
+
+    case "hyperliquid-vm": {
+      return decodedWithdrawal.withdrawal.parameters.amount;
+    }
+
+    default:
+      throw new Error("Unsupported vm type");
   }
 };
