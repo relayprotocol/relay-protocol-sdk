@@ -787,3 +787,61 @@ export const getDecodedWithdrawalCurrency = (
     }
   }
 };
+
+const decodeERC20TransferAmount = (data: string) => {
+  // ERC20 / TRC20 `transfer(address,uint256)` selector is 0xa9059cbb
+  const TRANSFER_SELECTOR = "0xa9059cbb";
+  if (data.toLowerCase().startsWith(TRANSFER_SELECTOR.toLowerCase())) {
+    const paramsData = ("0x" + data.slice(TRANSFER_SELECTOR.length)) as Hex;
+    const [amount] = decodeAbiParameters(
+      parseAbiParameters(["address", "uint256"]),
+      paramsData
+    );
+    return amount;
+  } else {
+    throw new Error(`Unsupported function call data: ${data}`);
+  }
+};
+
+export const getDecodedWithdrawalAmount = (
+  decodedWithdrawal: DecodedWithdrawal
+): string => {
+  switch (decodedWithdrawal.vmType) {
+    case "ethereum-vm": {
+      const firstCall = decodedWithdrawal.withdrawal.calls[0];
+      if (firstCall.data === "0x") {
+        return firstCall.value;
+      } else {
+        return decodeERC20TransferAmount(firstCall.data);
+      }
+    }
+
+    case "tron-vm": {
+      const firstCall = decodedWithdrawal.withdrawal.calls[0];
+      if (firstCall.data === "0x") {
+        return firstCall.value;
+      } else {
+        return decodeERC20TransferAmount(firstCall.data);
+      }
+    }
+
+    case "solana-vm": {
+      return decodedWithdrawal.withdrawal.amount;
+    }
+
+    case "sui-vm": {
+      return decodedWithdrawal.withdrawal.amount;
+    }
+
+    case "bitcoin-vm": {
+      throw new Error("Bitcoin VM withdrawals decoding not implemented yet");
+    }
+
+    case "hyperliquid-vm": {
+      return decodedWithdrawal.withdrawal.parameters.amount;
+    }
+
+    default:
+      throw new Error("Unsupported vm type");
+  }
+};
