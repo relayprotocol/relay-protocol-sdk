@@ -11,7 +11,8 @@ export type VmType =
   | "solana-vm"
   | "sui-vm"
   | "ton-vm"
-  | "tron-vm";
+  | "tron-vm"
+  | "lighter-vm";
 
 export type ChainIdToVmType = Record<string, VmType>;
 
@@ -40,6 +41,8 @@ export const getVmTypeNativeCurrency = (vmType: VmType) => {
       return "11111111111111111111111111111111";
     case "tron-vm":
       return "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb";
+    case "lighter-vm":
+      return "0";
     default:
       throw new Error(`Native currency not available for vm type ${vmType}`);
   }
@@ -113,6 +116,14 @@ export const encodeAddress = (address: string, vmType: VmType): Uint8Array => {
     case "tron-vm": {
       return hexToBytes(`0x${tronweb.utils.address.toHex(address)}`);
     }
+
+    case "lighter-vm": {
+      return hexToBytes(`0x${Number(address).toString(16).padStart(32, "0")}`);
+    }
+
+    default: {
+      throw new Error(`Vm type not implemented (encodeAddress)`);
+    }
   }
 };
 
@@ -167,6 +178,10 @@ export const decodeAddress = (address: Uint8Array, vmType: VmType): string => {
     case "tron-vm": {
       return tronweb.utils.address.fromHex(bytesToHex(address).slice(2));
     }
+
+    case "lighter-vm": {
+      return Number("0x" + Buffer.from(address).toString("hex")).toString();
+    }
   }
 };
 
@@ -204,6 +219,10 @@ export const encodeTransactionId = (
     case "tron-vm": {
       return hexToBytes(`0x${transactionId}`);
     }
+
+    case "lighter-vm": {
+      return hexToBytes(`0x${transactionId}`);
+    }
   }
 };
 
@@ -237,6 +256,10 @@ export const decodeTransactionId = (
     }
 
     case "tron-vm": {
+      return bytesToHex(transactionId).slice(2);
+    }
+
+    case "lighter-vm": {
       return bytesToHex(transactionId).slice(2);
     }
   }
