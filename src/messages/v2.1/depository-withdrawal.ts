@@ -13,6 +13,7 @@ import {
   hashStruct,
   Hex,
   parseAbiParameters,
+  parseUnits,
 } from "viem";
 
 import {
@@ -854,7 +855,13 @@ export const getDecodedWithdrawalAmount = (
     }
 
     case "hyperliquid-vm": {
-      return decodedWithdrawal.withdrawal.parameters.amount;
+      // The assumption here is that the amount is always encoded with the full decimals of the currency
+      const decimals =
+        decodedWithdrawal.withdrawal.parameters.amount.split(".")[1].length;
+      return parseUnits(
+        decodedWithdrawal.withdrawal.parameters.amount,
+        decimals
+      ).toString();
     }
 
     default:
