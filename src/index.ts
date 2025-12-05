@@ -60,6 +60,12 @@ import {
   getVmTypeNativeCurrency,
 } from "./utils";
 
+import {
+  SubmitWithdrawRequest,
+  getSubmitWithdrawRequestHash,
+  getWithdrawalAddress,
+} from "./messages/v2.2/allocator";
+
 export {
   // Order
   Order,
@@ -119,4 +125,9 @@ export {
   getExecutionMessageId,
   encodeAction,
   decodeAction,
+
+  // Allocator
+  SubmitWithdrawRequest,
+  getSubmitWithdrawRequestHash,
+  getWithdrawalAddress,
 };
