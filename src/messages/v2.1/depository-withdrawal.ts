@@ -13,6 +13,7 @@ import {
   hashStruct,
   Hex,
   parseAbiParameters,
+  parseUnits,
 } from "viem";
 
 import {
@@ -837,24 +838,18 @@ export const getDecodedWithdrawalAmount = (
     }
 
     case "bitcoin-vm": {
-      try {
-        const psbt = bitcoin.Psbt.fromHex(decodedWithdrawal.withdrawal.psbt);
-        const tx = psbt.extractTransaction(false);
-        const totalAmount = tx.outs.reduce((sum, output) => {
-          return sum + output.value;
-        }, 0);
-        return totalAmount.toString();
-      } catch (error) {
-        throw new Error(
-          `Failed to decode PSBT: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        );
-      }
+      const psbt = bitcoin.Psbt.fromHex(decodedWithdrawal.withdrawal.psbt);
+      return psbt.txOutputs[0].value.toString();
     }
 
     case "hyperliquid-vm": {
-      return decodedWithdrawal.withdrawal.parameters.amount;
+      // The assumption here is that the amount is always encoded with the full decimals of the currency
+      const decimals =
+        decodedWithdrawal.withdrawal.parameters.amount.split(".")[1].length;
+      return parseUnits(
+        decodedWithdrawal.withdrawal.parameters.amount,
+        decimals
+      ).toString();
     }
 
     default:
@@ -895,26 +890,9 @@ export const getDecodedWithdrawalRecipient = (
     }
 
     case "bitcoin-vm": {
-      try {
-        const psbt = bitcoin.Psbt.fromHex(decodedWithdrawal.withdrawal.psbt);
-        const tx = psbt.extractTransaction(false);
-        if (tx.outs.length === 0) {
-          throw new Error("Transaction has no outputs");
-        }
-        // Extract address from the first output
-        const firstOutput = tx.outs[0];
-        const address = bitcoin.address.fromOutputScript(
-          firstOutput.script,
-          bitcoin.networks.bitcoin
-        );
-        return address;
-      } catch (error) {
-        throw new Error(
-          `Failed to decode PSBT: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        );
-      }
+      const psbt = bitcoin.Psbt.fromHex(decodedWithdrawal.withdrawal.psbt);
+      const firstOutput = psbt.txOutputs[0];
+      return bitcoin.address.fromOutputScript(firstOutput.script);
     }
 
     case "hyperliquid-vm": {
