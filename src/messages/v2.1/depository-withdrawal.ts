@@ -118,11 +118,13 @@ export type DecodedTronVmWithdrawal = {
 export type DecodedSolanaVmWithdrawal = {
   vmType: "solana-vm";
   withdrawal: {
+    domain: string;
     recipient: string;
     token: string;
     amount: string;
     nonce: string;
     expiration: number;
+    vaultAddress: string;
   };
 };
 
@@ -230,6 +232,10 @@ export const encodeWithdrawal = (
         "0x" +
         coder.types
           .encode("TransferRequest", {
+            domain: Buffer.from(
+              decodedWithdrawal.withdrawal.domain.slice(2),
+              "hex"
+            ).buffer,
             recipient: new PublicKey(decodedWithdrawal.withdrawal.recipient),
             token:
               decodedWithdrawal.withdrawal.token ===
@@ -239,6 +245,9 @@ export const encodeWithdrawal = (
             amount: new anchor.BN(decodedWithdrawal.withdrawal.amount),
             nonce: new anchor.BN(decodedWithdrawal.withdrawal.nonce),
             expiration: new anchor.BN(decodedWithdrawal.withdrawal.expiration),
+            vault_address: new PublicKey(
+              decodedWithdrawal.withdrawal.vaultAddress
+            ),
           })
           .toString("hex")
       );
@@ -411,6 +420,7 @@ export const decodeWithdrawal = (
       return {
         vmType: "solana-vm",
         withdrawal: {
+          domain: "0x" + Buffer.from(request.domain).toString("hex"),
           recipient: request.recipient.toBase58(),
           token: request.token
             ? request.token.toBase58()
@@ -418,6 +428,7 @@ export const decodeWithdrawal = (
           amount: request.amount.toString(),
           nonce: request.nonce.toString(),
           expiration: request.expiration.toNumber(),
+          vaultAddress: request.vault_address.toBase58(),
         },
       };
     }
