@@ -235,7 +235,7 @@ export const encodeWithdrawal = (
             domain: Buffer.from(
               decodedWithdrawal.withdrawal.domain.slice(2),
               "hex"
-            ).buffer,
+            ),
             recipient: new PublicKey(decodedWithdrawal.withdrawal.recipient),
             token:
               decodedWithdrawal.withdrawal.token ===
