@@ -614,6 +614,10 @@ export const getDecodedWithdrawalId = (
     case "solana-vm": {
       const coder = new BorshCoder(RelayDepositoryIdl as Idl);
       const encodedWithdrawal = coder.types.encode("TransferRequest", {
+        domain: Buffer.from(
+          decodedWithdrawal.withdrawal.domain.slice(2),
+          "hex"
+        ),
         recipient: new PublicKey(decodedWithdrawal.withdrawal.recipient),
         token:
           decodedWithdrawal.withdrawal.token ===
@@ -623,6 +627,7 @@ export const getDecodedWithdrawalId = (
         amount: new anchor.BN(decodedWithdrawal.withdrawal.amount),
         nonce: new anchor.BN(decodedWithdrawal.withdrawal.nonce),
         expiration: new anchor.BN(decodedWithdrawal.withdrawal.expiration),
+        vault_address: new PublicKey(decodedWithdrawal.withdrawal.vaultAddress),
       });
 
       return (
