@@ -123,6 +123,7 @@ export type WithdrawalInitiationMessage = {
   data: WithdrawalAddressRequest & { settlementChainId: string };
   result: {
     withdrawalAddress: string;
+    blockNumber: string;
   };
 };
 
