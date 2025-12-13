@@ -54,7 +54,7 @@ export const getSubmitWithdrawRequestHash = (
 export interface WithdrawalAddressParams {
   depositoryAddress: string;
   depositoryChainId: bigint;
-  tokenId: bigint;
+  currency: string;
   recipientAddress: string;
   amount: bigint;
   withdrawalNonce?: number;
@@ -65,7 +65,7 @@ export interface WithdrawalAddressParams {
  *
  * @param depositoryAddress the depository contract holding the funds on origin chain
  * @param depositoryChainId the hub chain id of the depository contract currently holding the funds
- * @param tokenId the token id on the hub
+ * @param currency the id of the currency as expressed on origin chain (string)
  * @param recipientAddress the address that will receive the withdrawn funds on destination chain
  * @param amount the balance to withdraw
  * @param blockNumber block number when the Oracle witnessed the balance
@@ -83,7 +83,7 @@ export function getWithdrawalAddress(
       [
         "address",
         "uint256",
-        "uint256",
+        "string",
         "address",
         "uint256",
         "uint256",
@@ -92,7 +92,7 @@ export function getWithdrawalAddress(
       [
         withdrawalParams.depositoryAddress as `0x${string}`,
         withdrawalParams.depositoryChainId,
-        withdrawalParams.tokenId,
+        withdrawalParams.currency,
         withdrawalParams.recipientAddress as `0x${string}`,
         withdrawalParams.amount,
         withdrawalParams.blockNumber,
