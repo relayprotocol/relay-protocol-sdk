@@ -128,7 +128,10 @@ export type WithdrawalInitiationMessage = {
 };
 
 export type WithdrawalInitiatedMessage = {
-  data: { withdrawalAddress: string; settlementChainId: string };
+  data: WithdrawalAddressRequest & {
+    blockNumber: string;
+    settlementChainId: string;
+  };
   result: {
     proofOfWithdrawalAddressBalance: string;
   };
