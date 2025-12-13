@@ -57,8 +57,6 @@ export interface WithdrawalAddressParams {
   tokenId: bigint;
   recipientAddress: string;
   amount: bigint;
-  blockNumber: bigint;
-  withdrawalNonce?: number;
 }
 
 /**
@@ -67,14 +65,17 @@ export interface WithdrawalAddressParams {
  * @param depositoryAddress the depository contract holding the funds on origin chain
  * @param depositoryChainId the hub chain id of the depository contract currently holding the funds
  * @param tokenId the token id on the hub
- * @param recipientAddress the address that will receive the withdrawn funds
+ * @param recipientAddress the address that will receive the withdrawn funds on destination chain
  * @param amount the balance to withdraw
  * @param blockNumber block number when the Oracle witnessed the balance
  * @param withdrawalNonce (optional) nonce to prevent collisions for similar withdrawals in the same block
  * @returns withdrawal address (in lower case)
  */
 export function getWithdrawalAddress(
-  withdrawalParams: WithdrawalAddressParams
+  withdrawalParams: WithdrawalAddressParams & {
+    blockNumber: bigint;
+    withdrawalNonce?: number;
+  }
 ): string {
   // pack and hash data
   const hash = keccak256(
@@ -104,3 +105,24 @@ export function getWithdrawalAddress(
   const withdrawalAddress = hash.slice(2).slice(-40).toLowerCase();
   return `0x${withdrawalAddress}` as `0x${string}`;
 }
+
+// types for oracle routes
+export type WithdrawalInitiationMessage = {
+  data: {
+    hubChainId: string;
+    withdrawalAddressParams: WithdrawalAddressParams;
+  };
+  result: {
+    withdrawalAddress: string;
+  };
+};
+
+export type WithdrawalInitiatedMessage = {
+  data: {
+    hubChainId: string;
+    withdrawalAddressParams: WithdrawalAddressParams;
+  };
+  result: {
+    proofOfWithdrawalAddressBalance: string;
+  };
+};
