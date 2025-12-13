@@ -58,7 +58,7 @@ export interface WithdrawalAddressParams {
   recipientAddress: string;
   owner: string;
   amount: bigint;
-  withdrawalNonce: number;
+  withdrawalNonce: string;
 }
 
 /**
@@ -74,11 +74,12 @@ export interface WithdrawalAddressParams {
  * @returns withdrawal address (in lower case)
  */
 export function getWithdrawalAddress(
-  withdrawalParams: WithdrawalAddressParams & {
-    blockNumber: bigint;
-  }
+  withdrawalParams: WithdrawalAddressParams
 ): string {
   // pack and hash data
+  const nonce = keccak256(
+    encodePacked(["string"], [withdrawalParams.withdrawalNonce])
+  );
   const hash = keccak256(
     encodePacked(
       [
@@ -88,7 +89,7 @@ export function getWithdrawalAddress(
         "address",
         "address",
         "uint256",
-        "uint256",
+        "bytes32",
       ],
       [
         withdrawalParams.depositoryAddress as `0x${string}`,
@@ -97,7 +98,7 @@ export function getWithdrawalAddress(
         withdrawalParams.recipientAddress as `0x${string}`,
         withdrawalParams.owner as `0x${string}`,
         withdrawalParams.amount,
-        BigInt(withdrawalParams.withdrawalNonce),
+        nonce,
       ]
     )
   );

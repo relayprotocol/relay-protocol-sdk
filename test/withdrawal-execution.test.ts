@@ -7,10 +7,11 @@ describe("getWithdrawalAddress", () => {
     const params = {
       depositoryAddress: "0x1234567890123456789012345678901234567890",
       depositoryChainId: 1n,
-      tokenId: 100n,
+      currency: "10340230",
       recipientAddress: "0x9876543210987654321098765432109876543210",
+      owner: "0x9876543210987654321098765432109876543210",
       amount: 1000n,
-      blockNumber: 12345n,
+      withdrawalNonce: "haha",
     };
 
     const address = getWithdrawalAddress(params);
