@@ -109,11 +109,13 @@ export function getWithdrawalAddress(
 }
 
 // for oracle requests, we replace the hub chain id by a slug (e.g. 'base')
+// and we pass the amount as a string
 export type WithdrawalAddressRequest = Omit<
   WithdrawalAddressParams,
-  "depositoryChainId"
+  "depositoryChainId" | "amount"
 > & {
   depositoryChainSlug: string;
+  amount: string;
 };
 
 // types for oracle routes
