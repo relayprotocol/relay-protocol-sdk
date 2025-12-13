@@ -51,8 +51,56 @@ export const getSubmitWithdrawRequestHash = (
   return digest;
 };
 
-export function getWithdrawalAddress(request: SubmitWithdrawRequest): string {
-  const withdrawalHash = getSubmitWithdrawRequestHash(request);
-  const withdrawalAddress = withdrawalHash.slice(2).slice(-40);
+export interface WithdrawalAddressParams {
+  depositoryAddress: string;
+  depositoryChainId: bigint;
+  tokenId: bigint;
+  recipientAddress: string;
+  amount: bigint;
+  blockNumber: bigint;
+  withdrawalNonce?: number;
+}
+
+/**
+ * Compute deterministic withdrawal address
+ *
+ * @param depositoryAddress the depository contract holding the funds on origin chain
+ * @param depositoryChainId the hub chain id of the depository contract currently holding the funds
+ * @param tokenId the token id on the hub
+ * @param recipientAddress the address that will receive the withdrawn funds
+ * @param amount the balance to withdraw
+ * @param blockNumber block number when the Oracle witnessed the balance
+ * @param withdrawalNonce (optional) nonce to prevent collisions for similar withdrawals in the same block
+ * @returns withdrawal address (in lower case)
+ */
+export function getWithdrawalAddress(
+  withdrawalParams: WithdrawalAddressParams
+): string {
+  // pack and hash data
+  const hash = keccak256(
+    encodePacked(
+      [
+        "address",
+        "uint256",
+        "uint256",
+        "address",
+        "uint256",
+        "uint256",
+        "uint256",
+      ],
+      [
+        withdrawalParams.depositoryAddress as `0x${string}`,
+        withdrawalParams.depositoryChainId,
+        withdrawalParams.tokenId,
+        withdrawalParams.recipientAddress as `0x${string}`,
+        withdrawalParams.amount,
+        withdrawalParams.blockNumber,
+        BigInt(withdrawalParams.withdrawalNonce || 0),
+      ]
+    )
+  );
+
+  // get 40 bytes for an address
+  const withdrawalAddress = hash.slice(2).slice(-40).toLowerCase();
   return `0x${withdrawalAddress}` as `0x${string}`;
 }
