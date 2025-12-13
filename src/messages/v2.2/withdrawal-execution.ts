@@ -57,6 +57,7 @@ export interface WithdrawalAddressParams {
   tokenId: bigint;
   recipientAddress: string;
   amount: bigint;
+  withdrawalNonce?: number;
 }
 
 /**
@@ -74,7 +75,6 @@ export interface WithdrawalAddressParams {
 export function getWithdrawalAddress(
   withdrawalParams: WithdrawalAddressParams & {
     blockNumber: bigint;
-    withdrawalNonce?: number;
   }
 ): string {
   // pack and hash data

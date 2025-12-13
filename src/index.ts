@@ -64,7 +64,10 @@ import {
   SubmitWithdrawRequest,
   getSubmitWithdrawRequestHash,
   getWithdrawalAddress,
-} from "./messages/v2.2/allocator";
+  WithdrawalAddressParams,
+  WithdrawalInitiationMessage,
+  WithdrawalInitiatedMessage,
+} from "./messages/v2.2/withdrawal-execution";
 
 export {
   // Order
@@ -126,8 +129,11 @@ export {
   encodeAction,
   decodeAction,
 
-  // Allocator
+  // Onchain withdrawals
   SubmitWithdrawRequest,
   getSubmitWithdrawRequestHash,
   getWithdrawalAddress,
+  WithdrawalAddressParams,
+  WithdrawalInitiationMessage,
+  WithdrawalInitiatedMessage,
 };
