@@ -64,7 +64,7 @@ export interface WithdrawalAddressParams {
  * Compute deterministic withdrawal address
  *
  * @param depositoryAddress the depository contract holding the funds on origin chain
- * @param depositoryChainId the hub chain id of the depository contract currently holding the funds
+ * @param depositoryChainId the chain id of the depository contract currently holding the funds
  * @param currency the id of the currency as expressed on origin chain (string)
  * @param recipientAddress the address that will receive the withdrawn funds on destination chain
  * @param amount the balance to withdraw
@@ -106,22 +106,22 @@ export function getWithdrawalAddress(
   return `0x${withdrawalAddress}` as `0x${string}`;
 }
 
+// here we replace the hub chain id by a slug (e.g. 'base')
+export type WithdrawalAddressRequest = Omit<
+  WithdrawalAddressParams,
+  "depositoryChainId"
+> & { depositoryChainSlug: string };
+
 // types for oracle routes
 export type WithdrawalInitiationMessage = {
-  data: {
-    hubChainId: string;
-    withdrawalAddressParams: WithdrawalAddressParams;
-  };
+  data: WithdrawalAddressRequest & { hubChainId: string };
   result: {
     withdrawalAddress: string;
   };
 };
 
 export type WithdrawalInitiatedMessage = {
-  data: {
-    hubChainId: string;
-    withdrawalAddressParams: WithdrawalAddressParams;
-  };
+  data: WithdrawalAddressRequest & { hubChainId: string };
   result: {
     proofOfWithdrawalAddressBalance: string;
   };
