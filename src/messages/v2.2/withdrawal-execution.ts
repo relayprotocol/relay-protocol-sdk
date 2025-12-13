@@ -110,18 +110,21 @@ export function getWithdrawalAddress(
 export type WithdrawalAddressRequest = Omit<
   WithdrawalAddressParams,
   "depositoryChainId"
-> & { depositoryChainSlug: string };
+> & {
+  depositoryChainSlug: string;
+};
 
 // types for oracle routes
 export type WithdrawalInitiationMessage = {
-  data: WithdrawalAddressRequest & { hubChainId: string };
+  data: WithdrawalAddressRequest & { settlementChainId: string };
   result: {
+    owner: string; // current owner of balance on settlement chain
     withdrawalAddress: string;
   };
 };
 
 export type WithdrawalInitiatedMessage = {
-  data: WithdrawalAddressRequest & { hubChainId: string };
+  data: WithdrawalAddressRequest & { settlementChainId: string };
   result: {
     proofOfWithdrawalAddressBalance: string;
   };
