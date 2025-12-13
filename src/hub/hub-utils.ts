@@ -1,5 +1,5 @@
 import { getAddress, keccak256, encodePacked } from "viem";
-import { VmType } from "../../utils";
+import { VmType } from "../utils";
 
 export interface TokenIdComponents {
   family: VmType;
