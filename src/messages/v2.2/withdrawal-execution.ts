@@ -58,7 +58,7 @@ export interface WithdrawalAddressParams {
   recipientAddress: string;
   owner: string;
   amount: bigint;
-  withdrawalNonce?: number;
+  withdrawalNonce: number;
 }
 
 /**
@@ -70,8 +70,7 @@ export interface WithdrawalAddressParams {
  * @param recipientAddress the address that will receive the withdrawn funds on destination chain
  * @param owner the address that owns the balance before the withdrawal is initiated
  * @param amount the balance to withdraw
- * @param blockNumber block number when the Oracle witnessed the balance
- * @param withdrawalNonce (optional) nonce to prevent collisions for similar withdrawals in the same block
+ * @param withdrawalNonce nonce to prevent collisions for similar withdrawals
  * @returns withdrawal address (in lower case)
  */
 export function getWithdrawalAddress(
@@ -90,7 +89,6 @@ export function getWithdrawalAddress(
         "address",
         "uint256",
         "uint256",
-        "uint256",
       ],
       [
         withdrawalParams.depositoryAddress as `0x${string}`,
@@ -99,8 +97,7 @@ export function getWithdrawalAddress(
         withdrawalParams.recipientAddress as `0x${string}`,
         withdrawalParams.owner as `0x${string}`,
         withdrawalParams.amount,
-        withdrawalParams.blockNumber,
-        BigInt(withdrawalParams.withdrawalNonce || 0),
+        BigInt(withdrawalParams.withdrawalNonce),
       ]
     )
   );
@@ -123,13 +120,11 @@ export type WithdrawalInitiationMessage = {
   data: WithdrawalAddressRequest & { settlementChainId: string };
   result: {
     withdrawalAddress: string;
-    blockNumber: string;
   };
 };
 
 export type WithdrawalInitiatedMessage = {
   data: WithdrawalAddressRequest & {
-    blockNumber: string;
     settlementChainId: string;
   };
   result: {
