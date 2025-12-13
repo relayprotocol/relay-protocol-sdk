@@ -106,7 +106,7 @@ export function getWithdrawalAddress(
   return `0x${withdrawalAddress}` as `0x${string}`;
 }
 
-// here we replace the hub chain id by a slug (e.g. 'base')
+// for oracle requests, we replace the hub chain id by a slug (e.g. 'base')
 export type WithdrawalAddressRequest = Omit<
   WithdrawalAddressParams,
   "depositoryChainId"
