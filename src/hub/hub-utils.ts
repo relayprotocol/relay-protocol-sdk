@@ -58,8 +58,3 @@ export function generateTokenId(components: TokenIdComponents): TokenId {
   );
   return BigInt(keccak256(packedData));
 }
-
-export const generateIntentAddress = (intentId: string): VirtualAddress => {
-  const addressHash = keccak256(encodePacked(["string"], [intentId]));
-  return getAddress("0x" + addressHash.slice(2).slice(-40)) as `0x${string}`;
-};

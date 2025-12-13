@@ -66,6 +66,16 @@ import {
   getWithdrawalAddress,
 } from "./messages/v2.2/allocator";
 
+import {
+  TokenIdComponents,
+  VirtualAddressComponents,
+  TokenId,
+  VirtualAddress,
+  getCheckSummedAddress,
+  generateAddress,
+  generateTokenId,
+} from "./hub/hub-utils";
+
 export {
   // Order
   Order,
@@ -130,4 +140,13 @@ export {
   SubmitWithdrawRequest,
   getSubmitWithdrawRequestHash,
   getWithdrawalAddress,
+
+  //
+  TokenIdComponents,
+  VirtualAddressComponents,
+  TokenId,
+  VirtualAddress,
+  getCheckSummedAddress,
+  generateAddress,
+  generateTokenId,
 };
