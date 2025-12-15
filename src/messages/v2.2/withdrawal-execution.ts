@@ -51,15 +51,15 @@ export const getSubmitWithdrawRequestHash = (
   return digest;
 };
 
-export interface WithdrawalAddressParams {
+export type WithdrawalAddressParams = {
   depositoryAddress: string;
   depositoryChainId: bigint;
   currency: string;
-  recipientAddress: string;
   owner: string;
+  recipientAddress: string;
   amount: bigint;
   withdrawalNonce: string;
-}
+};
 
 /**
  * Compute deterministic withdrawal address
@@ -132,5 +132,6 @@ export type WithdrawalInitiatedMessage = {
   };
   result: {
     proofOfWithdrawalAddressBalance: string;
+    withdrawalAddress: string;
   };
 };
