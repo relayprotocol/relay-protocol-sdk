@@ -55,8 +55,9 @@ export type WithdrawalAddressParams = {
   depositoryAddress: string;
   depositoryChainId: bigint;
   currency: string;
-  owner: string;
   recipientAddress: string;
+  owner: string;
+  ownerChainId: string;
   amount: bigint;
   withdrawalNonce: string;
 };
