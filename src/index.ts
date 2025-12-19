@@ -67,6 +67,7 @@ import {
   WithdrawalAddressParams,
   WithdrawalInitiationMessage,
   WithdrawalInitiatedMessage,
+  WithdrawalAddressRequest,
 } from "./messages/v2.2/withdrawal-execution";
 
 export {
@@ -136,4 +137,5 @@ export {
   WithdrawalAddressParams,
   WithdrawalInitiationMessage,
   WithdrawalInitiatedMessage,
+  WithdrawalAddressRequest,
 };
