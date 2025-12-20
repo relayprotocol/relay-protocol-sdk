@@ -70,10 +70,22 @@ export const encodeAddress = (address: string, vmType: VmType): Uint8Array => {
 
         if (address.startsWith("bc1")) {
           const lower = address.toLowerCase();
-          const decoded = bech32.decode(lower, 90);
-          return decoded.prefix === "bc" && decoded.words[0] === 0
-            ? "bech32"
-            : "bech32m";
+
+          // Try Bech32 first (v0)
+          try {
+            const decoded = bech32.decode(lower, 90);
+            if (decoded.prefix === "bc" && decoded.words[0] === 0) {
+              return "bech32";
+            }
+          } catch (_) {}
+
+          // Try Bech32m (v1+)
+          try {
+            const decoded = bech32m.decode(lower, 90);
+            if (decoded.prefix === "bc" && decoded.words[0] >= 1) {
+              return "bech32m";
+            }
+          } catch (_) {}
         }
 
         throw new Error("Unsupported address format");
