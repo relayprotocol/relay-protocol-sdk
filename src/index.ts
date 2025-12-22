@@ -70,6 +70,16 @@ import {
   WithdrawalAddressRequest,
 } from "./messages/v2.2/withdrawal-execution";
 
+import {
+  TokenIdComponents,
+  VirtualAddressComponents,
+  TokenId,
+  VirtualAddress,
+  getCheckSummedAddress,
+  generateAddress,
+  generateTokenId,
+} from "./hub/hub-utils";
+
 export {
   // Order
   Order,
@@ -129,6 +139,15 @@ export {
   getExecutionMessageId,
   encodeAction,
   decodeAction,
+
+  // Hub utils
+  TokenIdComponents,
+  VirtualAddressComponents,
+  TokenId,
+  VirtualAddress,
+  getCheckSummedAddress,
+  generateAddress,
+  generateTokenId,
 
   // Onchain withdrawals
   SubmitWithdrawRequest,
