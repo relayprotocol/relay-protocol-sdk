@@ -9,7 +9,7 @@ describe("getWithdrawalAddress", () => {
       depositoryChainId: 1n,
       currency: "10340230",
       recipientAddress: "0x9876543210987654321098765432109876543210",
-      owner: "0x9876543210987654321098765432109876543210",
+      withdrawerAlias: "0x9876543210987654321098765432109876543210",
       amount: 1000n,
       withdrawalNonce: "haha",
     };
