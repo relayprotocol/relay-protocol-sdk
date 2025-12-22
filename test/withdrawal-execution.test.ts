@@ -9,14 +9,14 @@ describe("getWithdrawalAddress", () => {
       depositoryChainId: 1n,
       currency: "10340230",
       recipientAddress: "0x9876543210987654321098765432109876543210",
-      owner: "0x9876543210987654321098765432109876543210",
+      withdrawerAlias: "0x9876543210987654321098765432109876543210",
       amount: 1000n,
       withdrawalNonce: "haha",
     };
 
     const address = getWithdrawalAddress(params);
     expect(address).toMatch(/^0x[0-9a-f]{40}$/i);
-    expect(address).toBeTruthy();
+    expect(address).toBe("0xb73fed6628648bfac09347a115ded54ca2bc58d3");
     expect(getAddress(address).toLowerCase()).toMatch(address);
   });
 });

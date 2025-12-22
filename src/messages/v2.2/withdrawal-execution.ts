@@ -56,8 +56,7 @@ export type WithdrawalAddressParams = {
   depositoryChainId: bigint;
   currency: string;
   recipientAddress: string;
-  owner: string;
-  ownerChainId: string;
+  withdrawerAlias: string;
   amount: bigint;
   withdrawalNonce: string;
 };
@@ -69,7 +68,8 @@ export type WithdrawalAddressParams = {
  * @param depositoryChainId the chain id of the depository contract currently holding the funds
  * @param currency the id of the currency as expressed on origin chain (string)
  * @param recipientAddress the address that will receive the withdrawn funds on destination chain
- * @param owner the address that owns the balance before the withdrawal is initiated
+ * @param withdrawerAlias the address that owns the balance on the settlement chain
+ * before the withdrawal is initiated
  * @param amount the balance to withdraw
  * @param withdrawalNonce nonce to prevent collisions for similar withdrawals
  * @returns withdrawal address (in lower case)
@@ -97,7 +97,7 @@ export function getWithdrawalAddress(
         withdrawalParams.depositoryChainId,
         withdrawalParams.currency,
         withdrawalParams.recipientAddress as `0x${string}`,
-        withdrawalParams.owner as `0x${string}`,
+        withdrawalParams.withdrawerAlias as `0x${string}`,
         withdrawalParams.amount,
         nonce,
       ]
