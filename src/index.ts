@@ -64,7 +64,11 @@ import {
   SubmitWithdrawRequest,
   getSubmitWithdrawRequestHash,
   getWithdrawalAddress,
-} from "./messages/v2.2/allocator";
+  WithdrawalAddressParams,
+  WithdrawalInitiationMessage,
+  WithdrawalInitiatedMessage,
+  WithdrawalAddressRequest,
+} from "./messages/v2.2/withdrawal-execution";
 
 import {
   TokenIdComponents,
@@ -136,12 +140,7 @@ export {
   encodeAction,
   decodeAction,
 
-  // Allocator
-  SubmitWithdrawRequest,
-  getSubmitWithdrawRequestHash,
-  getWithdrawalAddress,
-
-  //
+  // Hub utils
   TokenIdComponents,
   VirtualAddressComponents,
   TokenId,
@@ -149,4 +148,13 @@ export {
   getCheckSummedAddress,
   generateAddress,
   generateTokenId,
+
+  // Onchain withdrawals
+  SubmitWithdrawRequest,
+  getSubmitWithdrawRequestHash,
+  getWithdrawalAddress,
+  WithdrawalAddressParams,
+  WithdrawalInitiationMessage,
+  WithdrawalInitiatedMessage,
+  WithdrawalAddressRequest,
 };

@@ -31,6 +31,11 @@ export type ExecutionMessage = {
   metadata?: ExecutionMessageMetadata[];
 };
 
+export type ExecutionMetadata = Omit<
+  ExecutionMessageMetadata,
+  "oracleContract" | "oracleChainId"
+>;
+
 export const getExecutionMessageId = (message: ExecutionMessage) => {
   return hashStruct({
     types: {
