@@ -16,7 +16,7 @@ describe("getWithdrawalAddress", () => {
 
     const address = getWithdrawalAddress(params);
     expect(address).toMatch(/^0x[0-9a-f]{40}$/i);
-    expect(address).toBeTruthy();
+    expect(address).toBe("0xb73fed6628648bfac09347a115ded54ca2bc58d3");
     expect(getAddress(address).toLowerCase()).toMatch(address);
   });
 });
